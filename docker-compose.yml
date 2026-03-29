@@ -41,7 +41,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-lazarus_user}:${POSTGRES_PASSWORD:-lazarus_password_change_me}@postgres:5432/${POSTGRES_DB:-lazarus}
       REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password_change_me}@redis:6379/0
       ENVIRONMENT: ${ENVIRONMENT:-development}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:3000","http://localhost:5173"]}'
     ports:
       - "8000:8000"
     depends_on:

@@ -17,7 +17,64 @@ export default function PharmacyTable({ prescriptions }: PharmacyTableProps) {
   return (
     <div className="card">
       <h3 className="text-sm font-semibold text-lazarus-text mb-4">Pharmacy Portal - Medication Decryption</h3>
-      <div className="overflow-x-auto">
+      <div className="space-y-3 md:hidden">
+        {prescriptions.map((rx) => (
+          <div
+            key={rx.id}
+            className="rounded-xl bg-lazarus-surface-low/80 p-4 ring-1 ring-lazarus-border/25"
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-muted">
+                  Timestamp
+                </p>
+                <p className="font-mono text-xs text-lazarus-text">
+                  {new Date(rx.timestamp).toLocaleString([], {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+              <span className="badge-normal">RX Record</span>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-muted">
+                  Encrypted
+                </p>
+                <p className="font-mono text-xs text-lazarus-warning/80 break-all">
+                  {rx.med_cipher_text}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-muted">
+                  Decrypted
+                </p>
+                <p className="font-mono font-semibold text-lazarus-normal">
+                  {rx.med_decoded_name || '???'}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-muted">
+                    Dose
+                  </p>
+                  <p>{rx.dosage || '--'}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-muted">
+                    Route
+                  </p>
+                  <p>{rx.route || '--'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-lazarus-muted text-left border-b border-[#424754]/30">

@@ -4,6 +4,7 @@ Identity Reconciliation - Uses BPM parity to disambiguate patients
 
 from uuid import UUID
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.models.cleaned import CleanTelemetry
 from app.models.identity import PatientAlias, IdentityAuditLog
 from app.config import settings
@@ -57,8 +58,22 @@ def reconcile_patient_identity(patient_raw_id: str, db: Session) -> UUID:
             confidence_score=confidence,
         )
         db.add(alias)
-        db.commit()
-        db.refresh(alias)
+        try:
+            db.commit()
+            db.refresh(alias)
+        except IntegrityError:
+            db.rollback()
+            alias = (
+                db.query(PatientAlias)
+                .filter_by(patient_raw_id=patient_raw_id, parity_flag=parity)
+                .first()
+            )
+            if alias:
+                alias.sample_count = sample_count
+                alias.confidence_score = confidence
+                db.commit()
+                return alias.patient_id
+            raise
 
         audit = IdentityAuditLog(
             patient_id=alias.patient_id,

@@ -2,7 +2,15 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../api/client'
 import type { VitalsResponse } from '../types'
 
-export function useVitals(patientId: string, hours: number = 24) {
+interface UseVitalsOptions {
+  refetchInterval?: number | false
+}
+
+export function useVitals(
+  patientId: string,
+  hours: number = 24,
+  options: UseVitalsOptions = {}
+) {
   return useQuery({
     queryKey: ['vitals', patientId, hours],
     queryFn: async () => {
@@ -12,6 +20,6 @@ export function useVitals(patientId: string, hours: number = 24) {
       return data
     },
     enabled: !!patientId,
-    refetchInterval: 5000,
+    refetchInterval: options.refetchInterval ?? 5000,
   })
 }

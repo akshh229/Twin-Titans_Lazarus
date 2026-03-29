@@ -7,6 +7,9 @@ body {
   background-color: #10141a;
   color: #e2e8f0;
   margin: 0;
+  background-image:
+    radial-gradient(circle at top, rgba(94, 234, 212, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(16, 20, 26, 0.98), rgba(16, 20, 26, 1));
 }
 
 .font-mono {
@@ -18,6 +21,10 @@ body {
   /* Tonal Layering & Glassmorphism instead of flat borders */
   .card {
     @apply bg-lazarus-surface/70 backdrop-blur-[20px] rounded-xl p-6 shadow-sm ring-1 ring-[#424754]/15 transition-all duration-300;
+  }
+
+  .card-interactive {
+    @apply hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(3,7,18,0.35)];
   }
 
   .card-critical {
@@ -39,7 +46,7 @@ body {
 
   /* Top Typography Priority */
   .vitals-value {
-    @apply font-mono text-[3.5rem] font-bold leading-none tracking-tight;
+    @apply font-mono text-[2.4rem] sm:text-[3rem] lg:text-[3.5rem] font-bold leading-none tracking-tight;
   }
 
   .vitals-label {
@@ -55,6 +62,59 @@ body {
   .alert-banner {
     @apply bg-lazarus-surface-high/90 backdrop-blur-[30px] border-b border-[#424754]/30 animate-pulse-critical-subtle;
   }
+
+  .page-entrance {
+    animation: page-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .card-entrance {
+    animation: card-rise 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .alert-item {
+    animation: card-rise 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .critical-chip {
+    animation: badge-throb 2.8s ease-in-out infinite;
+  }
+
+  .motion-dot-live {
+    animation: live-dot-pulse 1.8s ease-in-out infinite;
+  }
+
+  .signal-pill {
+    box-shadow: inset 0 0 0 1px rgba(66, 71, 84, 0.3);
+  }
+
+  .chart-shell {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-shell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      115deg,
+      transparent 0%,
+      rgba(94, 234, 212, 0.08) 46%,
+      transparent 60%
+    );
+    transform: translateX(-120%);
+    animation: telemetry-scan 5.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .live-shell-flash {
+    animation: shell-flash 820ms ease-out;
+  }
+
+  .live-vitals-card {
+    box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.16), 0 0 28px rgba(94, 234, 212, 0.1);
+    transform: translateY(-2px);
+  }
 }
 
 @keyframes pulse-critical-subtle {
@@ -62,6 +122,101 @@ body {
   50% { background-color: rgba(147, 0, 10, 0.3); }
 }
 
+@keyframes page-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes badge-throb {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 rgba(147, 0, 10, 0);
+  }
+  50% {
+    transform: translateY(-1px);
+    box-shadow: 0 0 24px rgba(147, 0, 10, 0.28);
+  }
+}
+
+@keyframes live-dot-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.28);
+  }
+  50% {
+    opacity: 0.82;
+    transform: scale(1.18);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes telemetry-scan {
+  0%, 100% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  52% {
+    opacity: 0.9;
+  }
+  70% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+@keyframes shell-flash {
+  0% {
+    box-shadow: 0 0 0 rgba(94, 234, 212, 0);
+  }
+  35% {
+    box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.24), 0 0 36px rgba(94, 234, 212, 0.14);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(94, 234, 212, 0);
+  }
+}
+
 .animate-pulse-critical-subtle {
   animation: pulse-critical-subtle 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-entrance,
+  .card-entrance,
+  .alert-item,
+  .critical-chip,
+  .motion-dot-live,
+  .chart-shell::after,
+  .live-shell-flash,
+  .animate-pulse-critical-subtle {
+    animation: none !important;
+  }
+
+  .card,
+  .card-interactive,
+  .live-vitals-card {
+    transform: none !important;
+    transition: none !important;
+  }
 }

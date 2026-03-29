@@ -5,9 +5,10 @@ import type { Patient } from '../types'
 interface PatientCardProps {
   patient: Patient
   isSelected?: boolean
+  index?: number
 }
 
-export default function PatientCard({ patient, isSelected }: PatientCardProps) {
+export default function PatientCard({ patient, isSelected, index = 0 }: PatientCardProps) {
   const bpmStatus = patient.last_bpm
     ? patient.last_bpm >= 60 && patient.last_bpm <= 100
       ? 'normal'
@@ -16,8 +17,17 @@ export default function PatientCard({ patient, isSelected }: PatientCardProps) {
 
   return (
     <Link to={`/patient/${patient.patient_id}`}>
-      <div className={`card group cursor-pointer ${patient.has_active_alert ? 'card-critical' : ''} ${isSelected ? 'ring-lazarus-accent/50 bg-lazarus-surface-high/60' : 'hover:bg-lazarus-surface-high/40'}`}>
-        <div className="flex items-start justify-between mb-6">
+      <div
+        className={`card group card-entrance card-interactive cursor-pointer ${
+          patient.has_active_alert ? 'card-critical' : ''
+        } ${
+          isSelected
+            ? 'ring-lazarus-accent/50 bg-lazarus-surface-high/60'
+            : 'hover:bg-lazarus-surface-high/40'
+        }`}
+        style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
+      >
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h3 className="font-semibold text-lg text-lazarus-text tracking-tight flex items-center gap-2">
               {patient.name || `Patient ${patient.patient_raw_id}`}
@@ -44,14 +54,14 @@ export default function PatientCard({ patient, isSelected }: PatientCardProps) {
           )}
         </div>
 
-        <div className="flex gap-10">
-          <div className="flex flex-col gap-1">
+        <div className="grid grid-cols-2 gap-6 sm:flex sm:gap-10">
+          <div className="flex flex-col gap-1 transition-transform duration-300 group-hover:-translate-y-0.5">
             <p className="vitals-label">BPM</p>
             <p className={`vitals-value ${bpmStatus === 'critical' ? 'text-[#ffb4ab]' : 'text-lazarus-text'}`}>
               {patient.last_bpm ?? '--'}
             </p>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 transition-transform duration-300 delay-75 group-hover:-translate-y-0.5">
             <p className="vitals-label">SpO2</p>
             <p className={`vitals-value ${patient.last_oxygen && patient.last_oxygen < 90 ? 'text-[#ffb4ab]' : 'text-lazarus-text'}`}>
               {patient.last_oxygen != null ? `${patient.last_oxygen}%` : '--'}
@@ -59,7 +69,7 @@ export default function PatientCard({ patient, isSelected }: PatientCardProps) {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center gap-3 text-[0.7rem] font-semibold tracking-wider uppercase text-lazarus-muted/70">
+        <div className="mt-6 flex flex-wrap items-center gap-3 text-[0.7rem] font-semibold tracking-wider uppercase text-lazarus-muted/70">
           <span className="bg-[#0a0e14] px-2 py-1 rounded-md ring-1 ring-[#424754]/20">ID: {patient.patient_raw_id}</span>
           <span className="bg-[#0a0e14] px-2 py-1 rounded-md ring-1 ring-[#424754]/20">Parity: {patient.parity_flag}</span>
           <span className="bg-[#0a0e14] px-2 py-1 rounded-md ring-1 ring-[#424754]/20">Rx: {patient.prescription_count}</span>

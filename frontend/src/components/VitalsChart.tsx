@@ -13,10 +13,23 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
     ...d,
     time: new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   }))
+  const latestPoint = chartData[chartData.length - 1]
 
   return (
-    <div className="card">
-      {title && <h3 className="text-sm font-semibold text-lazarus-text mb-4">{title}</h3>}
+    <div className="card chart-shell">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          {title && <h3 className="text-sm font-semibold text-lazarus-text">{title}</h3>}
+          <p className="mt-1 text-xs text-lazarus-muted">
+            Streaming telemetry with animated deltas for the most recent sample.
+          </p>
+        </div>
+        {latestPoint && (
+          <div className="signal-pill rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-muted">
+            Latest sample {latestPoint.time}
+          </div>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={250}>
         <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#424754" strokeOpacity={0.4} vertical={false} />
@@ -79,6 +92,10 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
               stroke="#ef4444"
               strokeWidth={2}
               dot={false}
+              activeDot={{ r: 5, strokeWidth: 0, fill: '#ffb4ab' }}
+              isAnimationActive
+              animationDuration={450}
+              animationEasing="ease-out"
               name="BPM"
             />
           )}
@@ -90,6 +107,10 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
               stroke="#3b82f6"
               strokeWidth={2}
               dot={false}
+              activeDot={{ r: 5, strokeWidth: 0, fill: '#93c5fd' }}
+              isAnimationActive
+              animationDuration={450}
+              animationEasing="ease-out"
               name="SpO2"
             />
           )}

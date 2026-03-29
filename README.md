@@ -1,6 +1,16 @@
-# Lazarus Medical Forensic Recovery Dashboard
+<div align="center">
+  <h1>🏥 Lazarus Medical Forensic Recovery Dashboard</h1>
+  <p><strong>St. Jude's Research Hospital - Emergency Data Recovery System</strong></p>
+  <p><em>Built by <strong>Team Twin Titan</strong> for <strong>The Rosetta Code Hackathon</strong> @ <strong>NIT, Hamirpur</strong></em></p>
 
-**St. Jude's Research Hospital - Emergency Data Recovery System**
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi"/>
+  <img alt="Python" src="https://img.shields.io/badge/python-3670A0?style=flat-square&logo=python&logoColor=ffdd54"/>
+  <img alt="React" src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB"/>
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-316192?style=flat-square&logo=postgresql&logoColor=white"/>
+  <img alt="Redis" src="https://img.shields.io/badge/redis-%23DD0031.svg?style=flat-square&logo=redis&logoColor=white"/>
+</div>
+
+<br/>
 
 ## 🏥 Project Overview
 
@@ -562,8 +572,11 @@ Internal use only - St. Jude's Research Hospital
 
 ## 👥 Contact
 
-For questions or support, contact the Medical IT Emergency Response Team.
+For questions, support, or hackathon judging, please contact **Team Twin Titan**.
 
 ---
 
-**Built with ❤️ for St. Jude's Research Hospital**
+<div align="center">
+  <strong>Built with ❤️ by Team Twin Titan for St. Jude's Research Hospital</strong><br/>
+  <em>The Rosetta Code Hackathon | National Institute of Technology (NIT), Hamirpur</em>
+</div>

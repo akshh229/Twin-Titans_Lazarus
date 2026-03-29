@@ -21,38 +21,43 @@ BASE_DIR = Path(__file__).parent
 
 
 def load_staging_data():
-    """Load CSV files into staging tables"""
+    """Load CSV files into staging tables using batch inserts"""
     db = SessionLocal()
 
     print("Loading patient demographics...")
     with open(BASE_DIR / "patient_demographics.csv") as f:
         reader = csv.DictReader(f)
-        for row in reader:
-            demo = StgPatientDemographics(**row)
-            db.add(demo)
+        rows = [row for row in reader]
+        db.bulk_save_objects([StgPatientDemographics(**row) for row in rows])
     db.commit()
-    print("  Done")
+    print(f"  Loaded {len(rows)} records")
 
     print("Loading telemetry logs...")
     with open(BASE_DIR / "telemetry_logs.csv") as f:
         reader = csv.DictReader(f)
+        rows = []
         for row in reader:
             row["timestamp"] = datetime.fromisoformat(row["timestamp"])
-            telem = StgTelemetryLogs(**row)
-            db.add(telem)
-    db.commit()
-    print("  Done")
+            rows.append(row)
+        batch_size = 1000
+        for i in range(0, len(rows), batch_size):
+            batch = rows[i : i + batch_size]
+            db.bulk_save_objects([StgTelemetryLogs(**row) for row in batch])
+            db.commit()
+            print(f"  Loaded {min(i + batch_size, len(rows))}/{len(rows)}")
+    print(f"  Done ({len(rows)} total)")
 
     print("Loading prescriptions...")
     with open(BASE_DIR / "prescription_audit.csv") as f:
         reader = csv.DictReader(f)
+        rows = []
         for row in reader:
             row["timestamp"] = datetime.fromisoformat(row["timestamp"])
             row["age"] = int(row["age"])
-            presc = StgPrescriptionAudit(**row)
-            db.add(presc)
+            rows.append(row)
+        db.bulk_save_objects([StgPrescriptionAudit(**row) for row in rows])
     db.commit()
-    print("  Done")
+    print(f"  Loaded {len(rows)} records")
 
     db.close()
 
@@ -64,8 +69,19 @@ def process_telemetry():
     print("Processing telemetry...")
     staging = db.query(StgTelemetryLogs).all()
 
+    processed = 0
+    skipped = 0
     for record in staging:
         decoded = decode_telemetry(record.hex_payload)
+
+        existing = (
+            db.query(CleanTelemetry)
+            .filter_by(patient_raw_id=record.patient_raw_id, timestamp=record.timestamp)
+            .first()
+        )
+        if existing:
+            skipped += 1
+            continue
 
         clean = CleanTelemetry(
             patient_raw_id=record.patient_raw_id,
@@ -77,9 +93,12 @@ def process_telemetry():
             quality_flag=decoded["quality_flag"],
         )
         db.add(clean)
+        processed += 1
 
     db.commit()
-    print(f"  Processed {len(staging)} records")
+    print(
+        f"  Processed {len(staging)} records ({processed} new, {skipped} duplicates skipped)"
+    )
     db.close()
 
 

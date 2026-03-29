@@ -1,16 +1,21 @@
 import { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import AlertBanner from './AlertBanner'
+import { useHealth } from '../hooks/useHealth'
 
 interface LayoutProps {
   children: ReactNode
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const { data: health, isLoading, isError } = useHealth()
+  const systemStatus = isError ? 'API offline' : isLoading ? 'Checking API' : 'API healthy'
+  const statusTone = isError ? 'bg-lazarus-critical' : 'bg-lazarus-normal'
+
   return (
     <div className="min-h-screen bg-lazarus-bg">
-      <header className="bg-lazarus-surface border-b border-lazarus-border px-6 py-3">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <header className="bg-lazarus-surface border-b border-lazarus-border px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-8 h-8 bg-lazarus-accent rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">L</span>
@@ -20,16 +25,25 @@ export default function Layout({ children }: LayoutProps) {
               <p className="text-xs text-lazarus-muted">Medical Forensic Recovery</p>
             </div>
           </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-lazarus-muted">St. Jude's Research Hospital</span>
-            <div className="w-2 h-2 bg-lazarus-normal rounded-full animate-pulse" title="Connected" />
+          <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+            <span className="text-xs text-lazarus-muted">St. Jude&apos;s Research Hospital</span>
+            <div className="flex items-center gap-2 rounded-full bg-lazarus-surface-low px-3 py-1.5 ring-1 ring-lazarus-border/40">
+              <div
+                className={`h-2.5 w-2.5 rounded-full ${statusTone} ${isError ? '' : 'animate-pulse'}`}
+                aria-hidden="true"
+              />
+              <span className="text-xs font-medium text-lazarus-text">{systemStatus}</span>
+              {health?.version && (
+                <span className="text-[11px] text-lazarus-muted">v{health.version}</span>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <AlertBanner />
 
-      <main className="max-w-7xl mx-auto px-6 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6">
         {children}
       </main>
     </div>

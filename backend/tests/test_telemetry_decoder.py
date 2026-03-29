@@ -46,7 +46,8 @@ class TestDecodeTelemetry:
 
     def test_empty_string(self):
         result = decode_telemetry("")
-        assert result["quality_flag"] == "missing"
+        assert result["quality_flag"] == "bad"
+        assert result["bpm"] is None
 
 
 class TestEncodeTelemetry:

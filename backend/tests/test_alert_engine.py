@@ -11,6 +11,7 @@ class TestAlertEngine:
         mock_db = MagicMock()
         mock_query = MagicMock()
         mock_query.filter_by.return_value = mock_query
+        mock_query.filter.return_value = mock_query
         mock_query.order_by.return_value = mock_query
         mock_query.first.return_value = None
         mock_db.query.return_value = mock_query
@@ -22,11 +23,21 @@ class TestAlertEngine:
 
     def test_abnormal_high_bpm_creates_alert(self):
         mock_db = MagicMock()
-        mock_query = MagicMock()
-        mock_query.filter_by.return_value = mock_query
-        mock_query.order_by.return_value = mock_query
-        mock_query.first.return_value = None
-        mock_db.query.return_value = mock_query
+
+        # First query (open alert check) -> None
+        # Second query (recent closed check) -> None
+        open_query = MagicMock()
+        open_query.filter_by.return_value = open_query
+        open_query.order_by.return_value = open_query
+        open_query.first.return_value = None
+
+        closed_query = MagicMock()
+        closed_query.filter_by.return_value = closed_query
+        closed_query.filter.return_value = closed_query
+        closed_query.order_by.return_value = closed_query
+        closed_query.first.return_value = None
+
+        mock_db.query.side_effect = [open_query, closed_query]
 
         process_vitals_for_alerts("test-uuid", 150, 95, mock_db)
 
@@ -37,11 +48,19 @@ class TestAlertEngine:
 
     def test_abnormal_low_bpm_creates_alert(self):
         mock_db = MagicMock()
-        mock_query = MagicMock()
-        mock_query.filter_by.return_value = mock_query
-        mock_query.order_by.return_value = mock_query
-        mock_query.first.return_value = None
-        mock_db.query.return_value = mock_query
+
+        open_query = MagicMock()
+        open_query.filter_by.return_value = open_query
+        open_query.order_by.return_value = open_query
+        open_query.first.return_value = None
+
+        closed_query = MagicMock()
+        closed_query.filter_by.return_value = closed_query
+        closed_query.filter.return_value = closed_query
+        closed_query.order_by.return_value = closed_query
+        closed_query.first.return_value = None
+
+        mock_db.query.side_effect = [open_query, closed_query]
 
         process_vitals_for_alerts("test-uuid", 45, 95, mock_db)
 

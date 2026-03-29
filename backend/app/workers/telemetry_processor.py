@@ -16,6 +16,24 @@ from app.services.identity_reconciler import reconcile_patient_identity
 from app.services.alert_engine import process_vitals_for_alerts
 
 
+def _decode_patient_name(name_cipher: str) -> str:
+    """Decode name cipher (uppercase, no spaces) back to readable name."""
+    if not name_cipher:
+        return "Unknown"
+    name = name_cipher.upper()
+    best_split = None
+    for i in range(2, len(name) - 1):
+        first = name[:i]
+        last = name[i:]
+        if first.isalpha() and last.isalpha() and len(first) >= 2 and len(last) >= 2:
+            best_split = (first, last)
+            if last[0] not in "AEIOU":
+                break
+    if best_split:
+        return f"{best_split[0].title()} {best_split[1].title()}"
+    return name_cipher.title()
+
+
 def process_unprocessed_telemetry(db: Session = None):
     """Process all unprocessed telemetry from staging to cleaned."""
     close_db = False
@@ -112,7 +130,7 @@ def process_unprocessed_demographics(db: Session = None):
             clean = CleanDemographics(
                 patient_raw_id=record.patient_raw_id,
                 name_cipher=record.name_cipher,
-                decoded_name=record.name_cipher,
+                decoded_name=_decode_patient_name(record.name_cipher),
                 age=record.age,
                 ward=record.ward_code,
             )

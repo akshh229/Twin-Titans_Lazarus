@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     MIN_CONFIDENCE_THRESHOLD: float = 0.5
 
     WS_HEARTBEAT_INTERVAL: int = 30
+    WS_POLL_INTERVAL_SECONDS: int = 2
 
     class Config:
         env_file = ".env"

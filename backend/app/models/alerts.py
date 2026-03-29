@@ -20,7 +20,7 @@ class PatientAlert(Base):
     last_oxygen = Column(Integer)
     consecutive_abnormal_count = Column(Integer, default=1)
     consecutive_normal_count = Column(Integer, default=0)
-    metadata = Column(JSONB)
+    alert_metadata = Column("metadata", JSONB)
 
     __table_args__ = (
         CheckConstraint(

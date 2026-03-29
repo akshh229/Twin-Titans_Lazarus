@@ -32,6 +32,14 @@ def decode_telemetry(hex_payload: str) -> Dict[str, Optional[Union[int, str]]]:
         }
     """
     try:
+        if not hex_payload:
+            return {
+                "bpm": None,
+                "oxygen": None,
+                "quality_flag": "bad",
+                "parity_flag": None,
+            }
+
         payload_bytes = bytes.fromhex(hex_payload.strip())
 
         if len(payload_bytes) < settings.SPO2_OFFSET + settings.SPO2_LENGTH:
@@ -72,7 +80,7 @@ def decode_telemetry(hex_payload: str) -> Dict[str, Optional[Union[int, str]]]:
             "parity_flag": parity,
         }
 
-    except (ValueError, IndexError):
+    except (ValueError, IndexError, TypeError):
         return {"bpm": None, "oxygen": None, "quality_flag": "bad", "parity_flag": None}
 
 

@@ -1,10 +1,8 @@
 import { usePatients } from '../hooks/usePatients'
-import { useWebSocket } from '../hooks/useWebSocket'
 import PatientCard from '../components/PatientCard'
 
 export default function Dashboard() {
   const { data: patients, isLoading, error } = usePatients()
-  useWebSocket()
 
   if (isLoading) {
     return (
@@ -43,12 +41,12 @@ export default function Dashboard() {
   const stablePatients = patients.filter((p) => !p.has_active_alert)
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="page-entrance">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-lazarus-text">Patient Dashboard</h1>
           <p className="text-sm text-lazarus-muted">
-            {patients.length} patients | {criticalPatients.length} critical
+            {patients.length} total | {criticalPatients.length} critical | {stablePatients.length} stable
           </p>
         </div>
       </div>
@@ -59,8 +57,8 @@ export default function Dashboard() {
             Critical Patients ({criticalPatients.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {criticalPatients.map((patient) => (
-              <PatientCard key={patient.patient_id} patient={patient} />
+            {criticalPatients.map((patient, index) => (
+              <PatientCard key={patient.patient_id} patient={patient} index={index} />
             ))}
           </div>
         </div>
@@ -68,11 +66,15 @@ export default function Dashboard() {
 
       <div>
         <h2 className="text-sm font-semibold text-lazarus-muted mb-3 uppercase tracking-wide">
-          All Patients ({stablePatients.length})
+          Stable Patients ({stablePatients.length})
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stablePatients.map((patient) => (
-            <PatientCard key={patient.patient_id} patient={patient} />
+          {stablePatients.map((patient, index) => (
+            <PatientCard
+              key={patient.patient_id}
+              patient={patient}
+              index={criticalPatients.length + index}
+            />
           ))}
         </div>
       </div>
