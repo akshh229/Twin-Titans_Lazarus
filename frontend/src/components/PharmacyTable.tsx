@@ -16,12 +16,17 @@ export default function PharmacyTable({ prescriptions }: PharmacyTableProps) {
 
   return (
     <div className="card">
-      <h3 className="text-sm font-semibold text-lazarus-text mb-4">Pharmacy Portal - Medication Decryption</h3>
+      <div className="mb-5">
+        <p className="section-label">Medication ledger</p>
+        <h3 className="mt-2 font-display text-[2rem] leading-none tracking-[-0.03em] text-lazarus-text">
+          Pharmacy decryption log
+        </h3>
+      </div>
       <div className="space-y-3 md:hidden">
         {prescriptions.map((rx) => (
           <div
             key={rx.id}
-            className="rounded-xl bg-lazarus-surface-low/80 p-4 ring-1 ring-lazarus-border/25"
+            className="rounded-[1.35rem] border border-white/7 bg-[#0e1620]/86 p-4 ring-1 ring-white/[0.03]"
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -37,7 +42,7 @@ export default function PharmacyTable({ prescriptions }: PharmacyTableProps) {
                   })}
                 </p>
               </div>
-              <span className="badge-normal">RX Record</span>
+              <span className="dossier-chip">RX record</span>
             </div>
             <div className="space-y-3 text-sm">
               <div>
@@ -77,7 +82,7 @@ export default function PharmacyTable({ prescriptions }: PharmacyTableProps) {
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-lazarus-muted text-left border-b border-[#424754]/30">
+            <tr className="border-b border-white/7 text-left text-lazarus-muted">
               <th className="pb-3 pr-4 font-semibold tracking-wider uppercase text-xs">Time</th>
               <th className="pb-3 pr-4 font-semibold tracking-wider uppercase text-xs">Encrypted</th>
               <th className="pb-3 pr-4 font-semibold tracking-wider uppercase text-xs">Decrypted</th>
@@ -87,7 +92,7 @@ export default function PharmacyTable({ prescriptions }: PharmacyTableProps) {
           </thead>
           <tbody>
             {prescriptions.map((rx) => (
-              <tr key={rx.id} className="border-b border-[#424754]/15 hover:bg-[#31353c]/40 transition-colors">
+              <tr key={rx.id} className="border-b border-white/6 transition-colors hover:bg-white/[0.03]">
                 <td className="py-3 pr-4 font-mono text-xs text-lazarus-muted">
                   {new Date(rx.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </td>

@@ -2,65 +2,183 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  color-scheme: dark;
+}
+
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background-color: #10141a;
-  color: #e2e8f0;
+  font-family: 'Manrope', system-ui, sans-serif;
+  background-color: #091019;
+  color: #f4efe6;
   margin: 0;
+  min-height: 100vh;
   background-image:
-    radial-gradient(circle at top, rgba(94, 234, 212, 0.08), transparent 30%),
-    linear-gradient(180deg, rgba(16, 20, 26, 0.98), rgba(16, 20, 26, 1));
+    radial-gradient(circle at 14% 14%, rgba(138, 168, 255, 0.2), transparent 0 24%),
+    radial-gradient(circle at 84% 10%, rgba(75, 197, 143, 0.09), transparent 0 22%),
+    linear-gradient(180deg, #0d1520 0%, #091019 42%, #060b12 100%);
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 82%);
+  opacity: 0.45;
+}
+
+body::after {
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px);
+  background-size: 10px 10px;
+  opacity: 0.08;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: 'IBM Plex Mono', Consolas, monospace;
   font-variant-numeric: tabular-nums;
 }
 
 @layer components {
-  /* Tonal Layering & Glassmorphism instead of flat borders */
+  .display-kicker {
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.34em] text-lazarus-info;
+  }
+
+  .display-title {
+    @apply font-display text-[2.5rem] font-semibold leading-[0.92] tracking-[-0.03em] text-lazarus-text sm:text-[3rem] lg:text-[4rem];
+  }
+
+  .section-label {
+    @apply text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-lazarus-muted;
+  }
+
+  .metric-frame {
+    @apply rounded-[1.35rem] border border-white/10 px-4 py-4 backdrop-blur-[14px];
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+    box-shadow: 0 12px 30px rgba(3, 7, 18, 0.22);
+  }
+
+  .metric-value {
+    @apply mt-2 font-mono text-[1.9rem] font-semibold tracking-[-0.04em] text-lazarus-text;
+  }
+
+  .dossier-chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0c131c]/85 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-lazarus-muted;
+  }
+
+  .dossier-divider {
+    @apply h-px w-full bg-[linear-gradient(90deg,rgba(138,168,255,0.35),rgba(255,255,255,0.03),transparent)];
+  }
+
   .card {
-    @apply bg-lazarus-surface/70 backdrop-blur-[20px] rounded-xl p-6 shadow-sm ring-1 ring-[#424754]/15 transition-all duration-300;
+    @apply relative overflow-hidden rounded-[1.75rem] border border-white/10 p-6 ring-1 ring-white/5 backdrop-blur-[18px] transition-all duration-300;
+    background: linear-gradient(180deg, rgba(21, 32, 44, 0.92), rgba(13, 21, 32, 0.92));
+    box-shadow: 0 24px 80px rgba(2, 6, 13, 0.4);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(138, 168, 255, 0.42), rgba(255, 255, 255, 0.04), transparent);
+    pointer-events: none;
   }
 
   .card-interactive {
-    @apply hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(3,7,18,0.35)];
+    @apply hover:-translate-y-1.5 hover:border-white/20;
+    box-shadow: 0 24px 80px rgba(2, 6, 13, 0.4);
+  }
+
+  .card-interactive:hover {
+    box-shadow: 0 30px 100px rgba(2, 6, 13, 0.48);
   }
 
   .card-critical {
-    @apply bg-lazarus-surface/70 backdrop-blur-[20px] rounded-xl p-6 ring-1 ring-lazarus-critical/50 shadow-glow-critical transition-all duration-300;
+    @apply border-lazarus-critical/40 shadow-[0_24px_80px_rgba(54,9,9,0.42)] ring-lazarus-critical/20;
   }
 
-  /* Status Badges with deeper contrasts */
   .badge-normal {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#00311f] text-lazarus-normal ring-1 ring-lazarus-normal/20;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-lazarus-normal/20 bg-[#0b241b] px-3 py-1.5 text-xs font-semibold text-lazarus-normal shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
   }
 
   .badge-critical {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#93000a] text-[#ffb4ab] ring-1 ring-lazarus-critical/20;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-lazarus-critical/25 bg-[#2f1517] px-3 py-1.5 text-xs font-semibold text-[#ffd1cb] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
   }
 
   .badge-warning {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#5c0008] text-[#ffb3ad] ring-1 ring-lazarus-warning/20;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-lazarus-warning/25 bg-[#2f2112] px-3 py-1.5 text-xs font-semibold text-lazarus-warning shadow-[inset_0_1px_0_rgba(255,255,255,0.04)];
   }
 
-  /* Top Typography Priority */
   .vitals-value {
-    @apply font-mono text-[2.4rem] sm:text-[3rem] lg:text-[3.5rem] font-bold leading-none tracking-tight;
+    @apply font-mono text-[2.2rem] font-semibold leading-none tracking-[-0.06em] sm:text-[2.8rem] lg:text-[3.2rem];
   }
 
   .vitals-label {
-    @apply text-xs font-semibold text-lazarus-muted uppercase tracking-[0.05em];
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-lazarus-muted;
   }
 
-  /* Buttons */
   .btn-primary {
-    @apply bg-lazarus-accent hover:bg-lazarus-accent/90 text-[#001a42] px-5 py-2.5 rounded-lg font-semibold transition-all shadow-sm;
+    @apply rounded-full border border-lazarus-accent/20 bg-lazarus-accent px-5 py-2.5 font-semibold text-[#091019] shadow-[0_16px_36px_rgba(138,168,255,0.28)] transition-all hover:-translate-y-0.5 hover:brightness-105;
   }
 
-  /* Fixed Alert Banner */
   .alert-banner {
-    @apply bg-lazarus-surface-high/90 backdrop-blur-[30px] border-b border-[#424754]/30 animate-pulse-critical-subtle;
+    @apply border-b border-white/10 backdrop-blur-[30px];
+    background: linear-gradient(180deg, rgba(49, 15, 18, 0.86), rgba(18, 12, 15, 0.96));
+  }
+
+  .hero-panel {
+    @apply relative overflow-hidden rounded-[2rem] border border-white/10 p-7;
+    background: linear-gradient(135deg, rgba(24, 38, 55, 0.96), rgba(11, 18, 26, 0.94) 64%);
+    box-shadow: 0 28px 90px rgba(2, 6, 13, 0.46);
+  }
+
+  .hero-panel::after {
+    content: '';
+    position: absolute;
+    inset: auto -12% -45% 38%;
+    height: 18rem;
+    background: radial-gradient(circle, rgba(138, 168, 255, 0.18), transparent 64%);
+    pointer-events: none;
+  }
+
+  .patient-card {
+    @apply min-h-[22rem] rounded-[1.9rem] p-7;
+  }
+
+  .patient-card::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 1.35rem;
+    bottom: 1.35rem;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(138, 168, 255, 0.9), rgba(138, 168, 255, 0));
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  .patient-card-critical::after {
+    background: linear-gradient(180deg, rgba(240, 108, 102, 0.95), rgba(240, 108, 102, 0));
+  }
+
+  .shell-frame {
+    @apply rounded-[2rem] border border-white/10 p-5;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
+    box-shadow: 0 20px 60px rgba(2, 6, 13, 0.3);
   }
 
   .page-entrance {
@@ -84,7 +202,7 @@ body {
   }
 
   .signal-pill {
-    box-shadow: inset 0 0 0 1px rgba(66, 71, 84, 0.3);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   }
 
   .chart-shell {
@@ -99,7 +217,7 @@ body {
     background: linear-gradient(
       115deg,
       transparent 0%,
-      rgba(94, 234, 212, 0.08) 46%,
+      rgba(138, 168, 255, 0.08) 46%,
       transparent 60%
     );
     transform: translateX(-120%);
@@ -112,14 +230,14 @@ body {
   }
 
   .live-vitals-card {
-    box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.16), 0 0 28px rgba(94, 234, 212, 0.1);
+    box-shadow: 0 0 0 1px rgba(138, 168, 255, 0.2), 0 0 32px rgba(138, 168, 255, 0.12);
     transform: translateY(-2px);
   }
 }
 
 @keyframes pulse-critical-subtle {
-  0%, 100% { background-color: rgba(49, 53, 60, 0.9); }
-  50% { background-color: rgba(147, 0, 10, 0.3); }
+  0%, 100% { background-color: rgba(49, 15, 18, 0.86); }
+  50% { background-color: rgba(88, 23, 28, 0.98); }
 }
 
 @keyframes page-rise {
@@ -190,7 +308,7 @@ body {
     box-shadow: 0 0 0 rgba(94, 234, 212, 0);
   }
   35% {
-    box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.24), 0 0 36px rgba(94, 234, 212, 0.14);
+    box-shadow: 0 0 0 1px rgba(138, 168, 255, 0.28), 0 0 36px rgba(138, 168, 255, 0.16);
   }
   100% {
     box-shadow: 0 0 0 rgba(94, 234, 212, 0);

@@ -16,63 +16,71 @@ export default function PatientCard({ patient, isSelected, index = 0 }: PatientC
     : 'unknown'
 
   return (
-    <Link to={`/patient/${patient.patient_id}`}>
+    <Link to={`/patient/${patient.patient_id}`} className="block">
       <div
-        className={`card group card-entrance card-interactive cursor-pointer ${
-          patient.has_active_alert ? 'card-critical' : ''
+        className={`card patient-card group card-entrance card-interactive cursor-pointer ${
+          patient.has_active_alert ? 'card-critical patient-card-critical' : ''
         } ${
           isSelected
             ? 'ring-lazarus-accent/50 bg-lazarus-surface-high/60'
-            : 'hover:bg-lazarus-surface-high/40'
+            : 'hover:bg-[#182535]'
         }`}
         style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
       >
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h3 className="font-semibold text-lg text-lazarus-text tracking-tight flex items-center gap-2">
+        <div className="mb-8 flex items-start justify-between gap-6">
+          <div className="min-w-0 pr-4">
+            <p className="section-label">
+              Case file {patient.patient_raw_id}
+            </p>
+            <h3 className="mt-3 text-[2rem] font-semibold leading-[1.02] tracking-[-0.05em] text-lazarus-text sm:text-[2.2rem]">
               {patient.name || `Patient ${patient.patient_raw_id}`}
             </h3>
-            <p className="text-sm font-medium text-lazarus-muted mt-0.5">
-              Age: {patient.age || 'N/A'} <span className="mx-1.5 opacity-40">•</span> Ward: {patient.ward || 'N/A'}
+            <p className="mt-3 max-w-sm text-sm font-medium text-lazarus-muted">
+              Age {patient.age || 'N/A'} <span className="mx-2 opacity-35">•</span>
+              Ward {patient.ward || 'N/A'}
             </p>
           </div>
-          
-          {bpmStatus === 'normal' && (
-            <span className="badge-normal">
-              <CheckCircle2 size={14} strokeWidth={2.5} /> Stable
-            </span>
-          )}
-          {bpmStatus === 'critical' && (
-            <span className="badge-critical">
-              <AlertOctagon size={14} strokeWidth={2.5} /> Critical
-            </span>
-          )}
-          {bpmStatus === 'unknown' && (
-            <span className="badge-warning">
-              <AlertTriangle size={14} strokeWidth={2.5} /> No Data
-            </span>
-          )}
+          <div className="shrink-0">
+            {bpmStatus === 'normal' && (
+              <span className="badge-normal">
+                <CheckCircle2 size={14} strokeWidth={2.5} /> Stable
+              </span>
+            )}
+            {bpmStatus === 'critical' && (
+              <span className="badge-critical">
+                <AlertOctagon size={14} strokeWidth={2.5} /> Critical
+              </span>
+            )}
+            {bpmStatus === 'unknown' && (
+              <span className="badge-warning">
+                <AlertTriangle size={14} strokeWidth={2.5} /> No Data
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 sm:flex sm:gap-10">
-          <div className="flex flex-col gap-1 transition-transform duration-300 group-hover:-translate-y-0.5">
-            <p className="vitals-label">BPM</p>
-            <p className={`vitals-value ${bpmStatus === 'critical' ? 'text-[#ffb4ab]' : 'text-lazarus-text'}`}>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2 transition-transform duration-300 group-hover:-translate-y-0.5">
+            <p className="vitals-label">Heart rate</p>
+            <p className={`vitals-value ${bpmStatus === 'critical' ? 'text-[#ffd1cb]' : 'text-lazarus-text'}`}>
               {patient.last_bpm ?? '--'}
             </p>
           </div>
-          <div className="flex flex-col gap-1 transition-transform duration-300 delay-75 group-hover:-translate-y-0.5">
-            <p className="vitals-label">SpO2</p>
-            <p className={`vitals-value ${patient.last_oxygen && patient.last_oxygen < 90 ? 'text-[#ffb4ab]' : 'text-lazarus-text'}`}>
+          <div className="flex flex-col gap-2 transition-transform duration-300 delay-75 group-hover:-translate-y-0.5">
+            <p className="vitals-label">Oxygen saturation</p>
+            <p className={`vitals-value ${patient.last_oxygen && patient.last_oxygen < 90 ? 'text-[#ffd1cb]' : 'text-lazarus-text'}`}>
               {patient.last_oxygen != null ? `${patient.last_oxygen}%` : '--'}
             </p>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3 text-[0.7rem] font-semibold tracking-wider uppercase text-lazarus-muted/70">
-          <span className="bg-[#0a0e14] px-2 py-1 rounded-md ring-1 ring-[#424754]/20">ID: {patient.patient_raw_id}</span>
-          <span className="bg-[#0a0e14] px-2 py-1 rounded-md ring-1 ring-[#424754]/20">Parity: {patient.parity_flag}</span>
-          <span className="bg-[#0a0e14] px-2 py-1 rounded-md ring-1 ring-[#424754]/20">Rx: {patient.prescription_count}</span>
+        <div className="mt-8">
+          <div className="dossier-divider" />
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <span className="dossier-chip">Parity {patient.parity_flag}</span>
+            <span className="dossier-chip">Prescriptions {patient.prescription_count}</span>
+            <span className="dossier-chip">Monitor ready</span>
+          </div>
         </div>
       </div>
     </Link>

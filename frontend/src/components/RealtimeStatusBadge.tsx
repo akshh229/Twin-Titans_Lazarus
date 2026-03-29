@@ -22,10 +22,10 @@ export default function RealtimeStatusBadge({
 }: RealtimeStatusBadgeProps) {
   const toneClasses =
     state === 'live'
-      ? 'bg-[#00311f] text-lazarus-normal ring-lazarus-normal/20'
+      ? 'bg-[#0c241b] text-lazarus-normal border-lazarus-normal/15'
       : state === 'connecting' || state === 'reconnecting'
-        ? 'bg-lazarus-surface-low text-lazarus-warning ring-lazarus-warning/20'
-        : 'bg-lazarus-surface-low text-lazarus-muted ring-lazarus-border/40'
+        ? 'bg-[#181e16] text-lazarus-warning border-lazarus-warning/15'
+        : 'bg-[#111821] text-lazarus-muted border-white/8'
 
   const dotClasses =
     state === 'live'
@@ -45,8 +45,8 @@ export default function RealtimeStatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${toneClasses} ${
-        compact ? '' : 'shadow-[0_8px_24px_rgba(3,7,18,0.18)]'
+      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold ${toneClasses} ${
+        compact ? '' : 'shadow-[0_12px_28px_rgba(2,6,13,0.24)]'
       }`}
     >
       <RadioTower size={13} strokeWidth={2.1} />
