@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #10141a;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  /* Tonal Layering & Glassmorphism instead of flat borders */
+  .card {
+    @apply bg-lazarus-surface/70 backdrop-blur-[20px] rounded-xl p-6 shadow-sm ring-1 ring-[#424754]/15 transition-all duration-300;
+  }
+
+  .card-critical {
+    @apply bg-lazarus-surface/70 backdrop-blur-[20px] rounded-xl p-6 ring-1 ring-lazarus-critical/50 shadow-glow-critical transition-all duration-300;
+  }
+
+  /* Status Badges with deeper contrasts */
+  .badge-normal {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#00311f] text-lazarus-normal ring-1 ring-lazarus-normal/20;
+  }
+
+  .badge-critical {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#93000a] text-[#ffb4ab] ring-1 ring-lazarus-critical/20;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-[#5c0008] text-[#ffb3ad] ring-1 ring-lazarus-warning/20;
+  }
+
+  /* Top Typography Priority */
+  .vitals-value {
+    @apply font-mono text-[3.5rem] font-bold leading-none tracking-tight;
+  }
+
+  .vitals-label {
+    @apply text-xs font-semibold text-lazarus-muted uppercase tracking-[0.05em];
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-lazarus-accent hover:bg-lazarus-accent/90 text-[#001a42] px-5 py-2.5 rounded-lg font-semibold transition-all shadow-sm;
+  }
+
+  /* Fixed Alert Banner */
+  .alert-banner {
+    @apply bg-lazarus-surface-high/90 backdrop-blur-[30px] border-b border-[#424754]/30 animate-pulse-critical-subtle;
+  }
+}
+
+@keyframes pulse-critical-subtle {
+  0%, 100% { background-color: rgba(49, 53, 60, 0.9); }
+  50% { background-color: rgba(147, 0, 10, 0.3); }
+}
+
+.animate-pulse-critical-subtle {
+  animation: pulse-critical-subtle 3s ease-in-out infinite;
+}
