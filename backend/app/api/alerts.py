@@ -3,6 +3,7 @@ Alerts API Endpoints
 Critical vitals alerts management
 """
 
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -75,6 +76,8 @@ async def acknowledge_alert(alert_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Alert not found")
 
     alert.status = "acknowledged"
+    if alert.closed_at is None:
+        alert.closed_at = datetime.utcnow()
     db.commit()
 
     return {"status": "acknowledged", "alert_id": alert_id}

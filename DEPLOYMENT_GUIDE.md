@@ -9,7 +9,7 @@
 | Requirement | Version | Purpose |
 |------------|---------|---------|
 | Docker | 24+ | Container orchestration |
-| Docker Compose | 2.20+ | Multi-service management |
+| Docker Compose v2 | 2.20+ | Multi-service management |
 | Node.js | 20+ | Frontend dev/build |
 | Python | 3.11+ | Backend runtime |
 
@@ -28,17 +28,19 @@ copy .env.example .env
 # Edit .env with secure passwords before production use
 ```
 
-### 2. Generate Seed Data
+### 2. Regenerate Seed Data (Optional)
 
 ```bash
 cd backend/seed_data
 node generate_seeds.mjs
 ```
 
+You can skip this if you want to use the committed sample CSVs already in `backend/seed_data/`.
+
 ### 3. Launch All Services
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 This starts:
@@ -53,13 +55,13 @@ This starts:
 In a second terminal:
 
 ```bash
-docker-compose exec backend python seed_data/load_seeds.py
+docker compose exec backend python seed_data/load_seeds.py
 ```
 
 ### 5. Start Live Simulator (Optional)
 
 ```bash
-docker-compose exec backend python app/workers/live_simulator.py
+docker compose exec backend python app/workers/live_simulator.py
 ```
 
 ### 6. Access the Application
@@ -70,6 +72,12 @@ docker-compose exec backend python app/workers/live_simulator.py
 | http://localhost:3000 | Frontend dev server |
 | http://localhost:8000/docs | Swagger API docs |
 | http://localhost:8000/health | Health check endpoint |
+
+### 7. Demo and QA Helpers
+
+- The patient detail view includes a **Developer Telemetry Simulator** panel in local dev builds.
+- The backend also exposes `POST /api/dev/simulate-telemetry` outside production for demo and QA sample injection.
+- The frontend websocket client now auto-reconnects with backoff and shows its connection state in the UI.
 
 ---
 
@@ -122,7 +130,7 @@ Frontend runs on `http://localhost:5173` with proxy to backend.
 | `ENVIRONMENT` | `development` | App environment |
 | `CORS_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Allowed CORS origins |
 | `VITE_API_URL` | `http://localhost:8000` | Backend API URL (frontend) |
-| `VITE_WS_URL` | `ws://localhost:8000` | WebSocket URL (frontend) |
+| `VITE_WS_URL` | `ws://localhost:8000` | Base WebSocket URL for realtime streams |
 | `ALERT_BPM_LOW` | `60` | Low BPM alert threshold |
 | `ALERT_BPM_HIGH` | `100` | High BPM alert threshold |
 | `ALERT_DEBOUNCE_COUNT` | `2` | Consecutive readings before alert |
@@ -188,7 +196,7 @@ server {
 
 ```bash
 # Via Docker
-docker-compose exec backend alembic upgrade head
+docker compose exec backend alembic upgrade head
 
 # Manual
 cd backend
@@ -218,12 +226,22 @@ generate_seeds.mjs  →  CSV files  →  load_seeds.py  →  staging tables  →
 
 ```bash
 # Via Docker
-docker-compose exec backend python -m pytest tests/ -v
+docker compose exec backend pytest -q
 
 # Manual
 cd backend
 python -m pytest tests/ -v --tb=short
 ```
+
+### Frontend Checks
+
+```bash
+cd frontend
+npm run test:run
+npm run build
+```
+
+GitHub Actions runs the backend tests, frontend tests, and frontend build on every push and pull request.
 
 ### Test Coverage
 
@@ -240,8 +258,8 @@ python -m pytest tests/ --cov=app --cov-report=term-missing
 Ensure PostgreSQL is healthy:
 
 ```bash
-docker-compose ps
-docker-compose logs postgres
+docker compose ps
+docker compose logs postgres
 ```
 
 ### Frontend can't reach backend
@@ -260,7 +278,7 @@ If missing, run `node backend/seed_data/generate_seeds.mjs`.
 
 ### WebSocket disconnects
 
-Nginx `proxy_read_timeout` is set to 86400s (24h). For production, adjust based on expected session length.
+The frontend automatically retries with exponential backoff and shows reconnecting/offline state in the UI. Nginx `proxy_read_timeout` is set to 86400s (24h); for production, adjust that based on expected session length.
 
 ---
 

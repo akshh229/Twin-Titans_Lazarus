@@ -1,12 +1,14 @@
 """Alert API response schemas"""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
 
 class AlertResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     patient_id: UUID
     alert_type: str
@@ -19,11 +21,9 @@ class AlertResponse(BaseModel):
     age: Optional[int] = None
     ward: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
-
 class AlertHistoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     opened_at: datetime
     closed_at: Optional[datetime] = None
@@ -31,6 +31,3 @@ class AlertHistoryResponse(BaseModel):
     last_bpm: int
     last_oxygen: int
     status: str
-
-    class Config:
-        from_attributes = True

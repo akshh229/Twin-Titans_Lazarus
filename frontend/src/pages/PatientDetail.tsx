@@ -4,6 +4,9 @@ import { usePatient } from '../hooks/usePatients'
 import { useVitals } from '../hooks/useVitals'
 import { usePrescriptions } from '../hooks/usePrescriptions'
 import { usePatientRealtime } from '../hooks/usePatientRealtime'
+import PatientAlertPanel from '../components/PatientAlertPanel'
+import RealtimeStatusBadge from '../components/RealtimeStatusBadge'
+import TelemetrySimulatorPanel from '../components/TelemetrySimulatorPanel'
 import VitalsChart from '../components/VitalsChart'
 import PharmacyTable from '../components/PharmacyTable'
 
@@ -14,7 +17,7 @@ export default function PatientDetail() {
     refetchInterval: false,
   })
   const { data: prescriptions, isLoading: rxLoading } = usePrescriptions(patientId || '')
-  const { connectionState, lastMessageAt } = usePatientRealtime(patientId || '')
+  const { connectionState, lastMessageAt, retryAttempt } = usePatientRealtime(patientId || '')
   const [isRealtimeFlash, setIsRealtimeFlash] = useState(false)
 
   useEffect(() => {
@@ -57,31 +60,14 @@ export default function PatientDetail() {
                 {patient.name || `Patient ${patient.patient_raw_id}`}
               </h1>
               {patient.has_active_alert && <span className="badge-critical">Critical</span>}
-              <span
-                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-                  connectionState === 'live'
-                    ? 'bg-[#00311f] text-lazarus-normal ring-lazarus-normal/20'
-                    : connectionState === 'connecting'
-                      ? 'bg-lazarus-surface-low text-lazarus-warning ring-lazarus-warning/20'
-                      : 'bg-lazarus-surface-low text-lazarus-muted ring-lazarus-border/40'
-                }`}
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    connectionState === 'live'
-                      ? 'bg-lazarus-normal motion-dot-live'
-                      : connectionState === 'connecting'
-                        ? 'bg-lazarus-warning'
-                        : 'bg-lazarus-muted'
-                  }`}
-                  aria-hidden="true"
-                />
-                {connectionState === 'live'
-                  ? 'Live monitor'
-                  : connectionState === 'connecting'
-                    ? 'Connecting'
-                    : 'Live feed offline'}
-              </span>
+              <RealtimeStatusBadge
+                state={connectionState}
+                retryAttempt={retryAttempt}
+                liveLabel="Live monitor"
+                connectingLabel="Connecting monitor"
+                reconnectingLabel="Reconnecting monitor"
+                offlineLabel="Monitor offline"
+              />
             </div>
             <p className="mt-2 text-sm text-lazarus-muted">
               Continuous patient telemetry with medication decryption and alert monitoring.
@@ -138,6 +124,14 @@ export default function PatientDetail() {
           </div>
         </div>
       </div>
+
+      {patientId && <PatientAlertPanel patientId={patientId} />}
+      {patientId && (
+        <TelemetrySimulatorPanel
+          patientId={patientId}
+          connectionState={connectionState}
+        />
+      )}
 
       {/* Vitals Chart */}
       <div className="mb-6">

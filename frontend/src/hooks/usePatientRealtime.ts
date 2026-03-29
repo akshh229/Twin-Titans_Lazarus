@@ -1,21 +1,17 @@
-import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { createWebSocketUrl } from '../api/websocket'
+import { useManagedWebSocket } from './useManagedWebSocket'
 import type {
   AlertClosedMessage,
   AlertOpenedMessage,
   Patient,
-  VitalsResponse,
   VitalsUpdateMessage,
+  VitalsResponse,
 } from '../types'
-
-type ConnectionState = 'connecting' | 'live' | 'offline'
 
 type RealtimeMessage =
   | AlertClosedMessage
   | AlertOpenedMessage
   | VitalsUpdateMessage
-  | { type: 'pong'; timestamp: string }
 
 function mergeVitalsIntoPatient(
   patient: Patient | undefined,
@@ -83,55 +79,11 @@ function mergeVitalsIntoHistory(
 
 export function usePatientRealtime(patientId: string) {
   const queryClient = useQueryClient()
-  const [connectionState, setConnectionState] = useState<ConnectionState>(
-    patientId ? 'connecting' : 'offline'
-  )
-  const [lastMessageAt, setLastMessageAt] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!patientId) {
-      setConnectionState('offline')
-      setLastMessageAt(null)
-      return
-    }
-
-    setConnectionState('connecting')
-    const socket = new WebSocket(createWebSocketUrl(`/ws/vitals/${patientId}`))
-
-    const heartbeat = window.setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: 'ping' }))
-      }
-    }, 15000)
-
-    socket.onopen = () => {
-      setConnectionState('live')
-    }
-
-    socket.onerror = () => {
-      setConnectionState('offline')
-    }
-
-    socket.onclose = () => {
-      setConnectionState('offline')
-    }
-
-    socket.onmessage = (event) => {
-      let message: RealtimeMessage
-
-      try {
-        message = JSON.parse(event.data) as RealtimeMessage
-      } catch {
-        return
-      }
-
-      if (message.type === 'pong') {
-        return
-      }
-
-      setConnectionState('live')
-      setLastMessageAt(new Date().toISOString())
-
+  return useManagedWebSocket<RealtimeMessage>({
+    path: `/ws/vitals/${patientId}`,
+    enabled: !!patientId,
+    onMessage: (message) => {
       if (message.type === 'vitals_update') {
         queryClient.setQueryData(['patient', patientId], (current: Patient | undefined) =>
           mergeVitalsIntoPatient(current, message)
@@ -178,13 +130,6 @@ export function usePatientRealtime(patientId: string) {
       )
       queryClient.invalidateQueries({ queryKey: ['alerts'] })
       queryClient.invalidateQueries({ queryKey: ['alertHistory', patientId] })
-    }
-
-    return () => {
-      window.clearInterval(heartbeat)
-      socket.close()
-    }
-  }, [patientId, queryClient])
-
-  return { connectionState, lastMessageAt }
+    },
+  })
 }

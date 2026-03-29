@@ -7,11 +7,13 @@ and scientific computing. FastAPI provides async support, automatic
 OpenAPI docs, and Pydantic type safety - critical for medical data.
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
     APP_NAME: str = "Lazarus Medical Forensic Recovery System"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
@@ -43,10 +45,4 @@ class Settings(BaseSettings):
 
     WS_HEARTBEAT_INTERVAL: int = 30
     WS_POLL_INTERVAL_SECONDS: int = 2
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
-
 settings = Settings()

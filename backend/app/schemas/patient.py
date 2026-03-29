@@ -1,12 +1,14 @@
 """Patient API response schemas"""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
 
 class PatientListResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     patient_id: UUID
     patient_raw_id: str
     parity_flag: str
@@ -19,10 +21,6 @@ class PatientListResponse(BaseModel):
     quality_flag: Optional[str] = None
     prescription_count: int = 0
     has_active_alert: bool = False
-
-    class Config:
-        from_attributes = True
-
 
 class PatientDetailResponse(PatientListResponse):
     identity_confidence: float = 0.0

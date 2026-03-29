@@ -1,13 +1,17 @@
 import { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import AlertBanner from './AlertBanner'
+import RealtimeStatusBadge from './RealtimeStatusBadge'
 import { useHealth } from '../hooks/useHealth'
+import { useOverviewRealtime } from '../hooks/useOverviewRealtime'
 
 interface LayoutProps {
   children: ReactNode
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const { connectionState: realtimeState, retryAttempt: realtimeRetryAttempt } =
+    useOverviewRealtime()
   const { data: health, isLoading, isError } = useHealth()
   const systemStatus = isError ? 'API offline' : isLoading ? 'Checking API' : 'API healthy'
   const statusTone = isError ? 'bg-lazarus-critical' : 'bg-lazarus-normal'
@@ -27,6 +31,11 @@ export default function Layout({ children }: LayoutProps) {
           </Link>
           <div className="flex flex-wrap items-center gap-3 sm:justify-end">
             <span className="text-xs text-lazarus-muted">St. Jude&apos;s Research Hospital</span>
+            <RealtimeStatusBadge
+              state={realtimeState}
+              retryAttempt={realtimeRetryAttempt}
+              compact
+            />
             <div className="flex items-center gap-2 rounded-full bg-lazarus-surface-low px-3 py-1.5 ring-1 ring-lazarus-border/40">
               <div
                 className={`h-2.5 w-2.5 rounded-full ${statusTone} ${isError ? '' : 'animate-pulse'}`}

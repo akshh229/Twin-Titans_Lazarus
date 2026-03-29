@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api import patients, vitals, prescriptions, alerts
+from app.api import alerts, devtools, patients, prescriptions, vitals
 from app.websocket import vitals_stream
 
 app = FastAPI(
@@ -26,6 +26,7 @@ app.include_router(patients.router, prefix="/api", tags=["patients"])
 app.include_router(vitals.router, prefix="/api", tags=["vitals"])
 app.include_router(prescriptions.router, prefix="/api", tags=["prescriptions"])
 app.include_router(alerts.router, prefix="/api", tags=["alerts"])
+app.include_router(devtools.router, prefix="/api", tags=["devtools"])
 app.include_router(vitals_stream.router, prefix="/ws", tags=["websocket"])
 
 

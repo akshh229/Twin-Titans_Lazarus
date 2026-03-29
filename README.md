@@ -60,11 +60,12 @@ Lazarus is an end-to-end medical forensic recovery dashboard designed to reconst
 - React 18 with TypeScript
 - Recharts for vitals time-series visualization
 - TanStack Query (React Query) for data fetching
-- Socket.io-client for WebSocket connections
+- Native browser WebSockets via a managed reconnect/backoff hook
 - Tailwind CSS for clinical dashboard styling
+- Vitest + Testing Library for UI and realtime hook coverage
 
 **Infrastructure:**
-- Docker Compose for local development
+- Docker with Compose v2 for local development
 - Nginx as reverse proxy
 
 ## 🗄️ Database Schema
@@ -321,9 +322,9 @@ GET /health
 
 ### Prerequisites
 
-- Docker & Docker Compose
+- Docker with Compose v2
 - Python 3.11+ (for local development)
-- Node.js 18+ (for frontend development)
+- Node.js 20+ (for frontend development)
 
 ### Option 1: Docker Compose (Recommended)
 
@@ -335,19 +336,19 @@ cd "E:\Project Lazarus"
 copy .env.example .env
 
 # 3. Start all services
-docker-compose up -d
+docker compose up -d
 
 # 4. Wait for services to be healthy (30-60 seconds)
-docker-compose ps
+docker compose ps
 
 # 5. Run database migrations
-docker-compose exec backend alembic upgrade head
+docker compose exec backend alembic upgrade head
 
 # 6. Load seed data
-docker-compose exec backend python seed_data/load_seeds.py
+docker compose exec backend python seed_data/load_seeds.py
 
 # 7. Access dashboard
-# Frontend: http://localhost:3000
+# Frontend (Docker): http://localhost:3000
 # API Docs: http://localhost:8000/docs
 # Backend Health: http://localhost:8000/health
 ```
@@ -389,7 +390,7 @@ npm install
 # Start development server
 npm run dev
 
-# Access at http://localhost:3000
+# Access at http://localhost:5173
 ```
 
 ## 📊 Seed Data
@@ -429,11 +430,14 @@ pytest tests/test_api_endpoints.py -v
 ```bash
 cd frontend
 
-# Run component tests
-npm test
+# Run component and hook tests once
+npm run test:run
 
-# Run with coverage
-npm run test:coverage
+# Run in watch mode
+npm run test
+
+# Verify the production bundle
+npm run build
 ```
 
 ## 📁 Project Structure
@@ -448,7 +452,7 @@ lazarus/
 │   │   ├── models/              # ORM models (staging, cleaned, identity, alerts)
 │   │   ├── schemas/             # Pydantic validation schemas
 │   │   ├── api/                 # REST endpoint routers
-│   │   ├── websocket/           # WebSocket handlers
+│   │   ├── websocket/           # Native WebSocket handlers
 │   │   ├── services/            # Business logic
 │   │   │   ├── telemetry_decoder.py
 │   │   │   ├── cipher.py
@@ -464,10 +468,10 @@ lazarus/
 ├── frontend/
 │   ├── src/
 │   │   ├── App.tsx
-│   │   ├── api/                 # Axios client + WebSocket
+│   │   ├── api/                 # Axios client + WebSocket URL helpers
 │   │   ├── components/          # PatientCard, VitalsChart, PharmacyTable, AlertBanner
 │   │   ├── pages/               # Dashboard, PatientDetail
-│   │   ├── hooks/               # usePatients, useVitals, useWebSocket
+│   │   ├── hooks/               # usePatients, useVitals, useManagedWebSocket
 │   │   └── types/               # TypeScript interfaces
 │   ├── package.json
 │   └── Dockerfile
@@ -496,9 +500,11 @@ lazarus/
 ✅ **Medication Decryption** - Age-relative cipher decoding
 ✅ **Hex Telemetry Parsing** - Corrupted sensor data recovery
 ✅ **Smart Alerting** - Debounced critical vitals notifications
+✅ **QA Telemetry Injection** - Dev-only simulator panel for demos and testing
 ✅ **Forensic Audit Trail** - Complete data lineage tracking
 ✅ **Quality Flags** - Bad sample detection and filtering
 ✅ **Confidence Scoring** - Identity reconciliation accuracy metrics
+✅ **CI on Every Push/PR** - Backend tests plus frontend tests and build checks
 
 ## 📈 Performance Metrics
 
@@ -514,28 +520,28 @@ lazarus/
 **Database connection failed:**
 ```bash
 # Check PostgreSQL is running
-docker-compose ps postgres
+docker compose ps postgres
 
 # View logs
-docker-compose logs postgres
+docker compose logs postgres
 
 # Reset database
-docker-compose down -v
-docker-compose up -d postgres
+docker compose down -v
+docker compose up -d postgres
 ```
 
 **WebSocket not connecting:**
 - Verify backend is running: `curl http://localhost:8000/health`
 - Check CORS settings in `.env`
-- Ensure Redis is running: `docker-compose ps redis`
+- Ensure Redis is running: `docker compose ps redis`
 
 **No data on dashboard:**
 ```bash
 # Load seed data
-docker-compose exec backend python seed_data/load_seeds.py
+docker compose exec backend python seed_data/load_seeds.py
 
 # Start live simulator
-docker-compose exec backend python app/workers/live_simulator.py
+docker compose exec backend python app/workers/live_simulator.py
 ```
 
 ## 📚 Implementation Status

@@ -13,25 +13,8 @@ from app.models.cleaned import CleanTelemetry, CleanPrescriptions, CleanDemograp
 from app.services.telemetry_decoder import decode_telemetry
 from app.services.cipher import decrypt_medication
 from app.services.identity_reconciler import reconcile_patient_identity
+from app.services.name_decoder import decode_patient_name
 from app.services.alert_engine import process_vitals_for_alerts
-
-
-def _decode_patient_name(name_cipher: str) -> str:
-    """Decode name cipher (uppercase, no spaces) back to readable name."""
-    if not name_cipher:
-        return "Unknown"
-    name = name_cipher.upper()
-    best_split = None
-    for i in range(2, len(name) - 1):
-        first = name[:i]
-        last = name[i:]
-        if first.isalpha() and last.isalpha() and len(first) >= 2 and len(last) >= 2:
-            best_split = (first, last)
-            if last[0] not in "AEIOU":
-                break
-    if best_split:
-        return f"{best_split[0].title()} {best_split[1].title()}"
-    return name_cipher.title()
 
 
 def process_unprocessed_telemetry(db: Session = None):
@@ -127,10 +110,23 @@ def process_unprocessed_demographics(db: Session = None):
         staging_records = db.query(StgPatientDemographics).all()
 
         for record in staging_records:
+            existing = (
+                db.query(CleanDemographics)
+                .filter_by(patient_raw_id=record.patient_raw_id)
+                .first()
+            )
+
+            if existing:
+                existing.name_cipher = record.name_cipher
+                existing.decoded_name = decode_patient_name(record.name_cipher)
+                existing.age = record.age
+                existing.ward = record.ward_code
+                continue
+
             clean = CleanDemographics(
                 patient_raw_id=record.patient_raw_id,
                 name_cipher=record.name_cipher,
-                decoded_name=_decode_patient_name(record.name_cipher),
+                decoded_name=decode_patient_name(record.name_cipher),
                 age=record.age,
                 ward=record.ward_code,
             )

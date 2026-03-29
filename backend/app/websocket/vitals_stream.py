@@ -21,6 +21,22 @@ from app.database import SessionLocal
 router = APIRouter()
 
 
+def _serialize_mapping(mapping: dict[str, Any]) -> dict[str, Any]:
+    serialized: dict[str, Any] = {}
+    for key, value in mapping.items():
+        if value is None or isinstance(value, (str, int, float, bool)):
+            serialized[key] = value
+        elif hasattr(value, "isoformat"):
+            serialized[key] = value.isoformat()
+        else:
+            serialized[key] = str(value)
+    return serialized
+
+
+def _snapshot_signature(snapshot: Any) -> str:
+    return json.dumps(snapshot, sort_keys=True, separators=(",", ":"))
+
+
 def _get_patient_snapshot(patient_id: str) -> dict[str, Any] | None:
     db = SessionLocal()
     try:
@@ -75,6 +91,88 @@ def _get_patient_snapshot(patient_id: str) -> dict[str, Any] | None:
         db.close()
 
 
+def _get_patients_snapshot() -> list[dict[str, Any]]:
+    db = SessionLocal()
+    try:
+        rows = db.execute(
+            text(
+                """
+                SELECT
+                    pa.patient_id,
+                    pa.patient_raw_id,
+                    pa.parity_flag,
+                    cd.decoded_name as name,
+                    cd.age,
+                    cd.ward,
+                    latest_vitals.bpm AS last_bpm,
+                    latest_vitals.oxygen AS last_oxygen,
+                    latest_vitals.timestamp AS last_vitals_timestamp,
+                    latest_vitals.quality_flag,
+                    COALESCE(presc_count.cnt, 0) AS prescription_count,
+                    EXISTS(
+                        SELECT 1 FROM patient_alerts
+                        WHERE patient_alerts.patient_id = pa.patient_id
+                        AND status = 'open'
+                    ) AS has_active_alert
+                FROM patient_alias pa
+                LEFT JOIN clean_demographics cd ON cd.patient_raw_id = pa.patient_raw_id
+                LEFT JOIN LATERAL (
+                    SELECT bpm, oxygen, timestamp, quality_flag
+                    FROM clean_telemetry ct
+                    WHERE ct.patient_raw_id = pa.patient_raw_id
+                        AND ct.parity_flag = pa.parity_flag
+                        AND ct.quality_flag = 'good'
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                ) latest_vitals ON true
+                LEFT JOIN (
+                    SELECT patient_raw_id, COUNT(*) AS cnt
+                    FROM clean_prescriptions
+                    GROUP BY patient_raw_id
+                ) presc_count ON presc_count.patient_raw_id = pa.patient_raw_id
+                ORDER BY has_active_alert DESC, cd.decoded_name ASC
+                LIMIT 100
+                """
+            )
+        ).mappings()
+
+        return [_serialize_mapping(dict(row)) for row in rows]
+    finally:
+        db.close()
+
+
+def _get_alerts_snapshot() -> list[dict[str, Any]]:
+    db = SessionLocal()
+    try:
+        rows = db.execute(
+            text(
+                """
+                SELECT
+                    pa.id,
+                    pa.patient_id,
+                    pa.alert_type,
+                    pa.opened_at,
+                    pa.last_bpm,
+                    pa.last_oxygen,
+                    pa.status,
+                    pa.consecutive_abnormal_count,
+                    cd.decoded_name as patient_name,
+                    cd.age,
+                    cd.ward
+                FROM patient_alerts pa
+                LEFT JOIN patient_alias paa ON pa.patient_id = paa.patient_id
+                LEFT JOIN clean_demographics cd ON cd.patient_raw_id = paa.patient_raw_id
+                WHERE pa.status = 'open'
+                ORDER BY pa.opened_at DESC
+                """
+            )
+        ).mappings()
+
+        return [_serialize_mapping(dict(row)) for row in rows]
+    finally:
+        db.close()
+
+
 def _has_vitals_changed(
     previous_snapshot: dict[str, Any] | None, current_snapshot: dict[str, Any]
 ) -> bool:
@@ -119,6 +217,61 @@ def _build_alert_message(
         "type": "alert_closed",
         "patient_id": str(current_snapshot["patient_id"]),
     }
+
+
+@router.websocket("/overview")
+async def overview_websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for dashboard-level patient and alert snapshots."""
+    await websocket.accept()
+
+    patients_snapshot = await run_in_threadpool(_get_patients_snapshot)
+    alerts_snapshot = await run_in_threadpool(_get_alerts_snapshot)
+    patients_signature = _snapshot_signature(patients_snapshot)
+    alerts_signature = _snapshot_signature(alerts_snapshot)
+
+    await websocket.send_json(
+        {"type": "patients_snapshot", "patients": patients_snapshot}
+    )
+    await websocket.send_json({"type": "alerts_snapshot", "alerts": alerts_snapshot})
+
+    try:
+        while True:
+            try:
+                data = await asyncio.wait_for(
+                    websocket.receive_text(),
+                    timeout=settings.WS_POLL_INTERVAL_SECONDS,
+                )
+                try:
+                    message = json.loads(data)
+                except json.JSONDecodeError:
+                    continue
+
+                if message.get("type") == "ping":
+                    await websocket.send_json(
+                        {"type": "pong", "timestamp": datetime.utcnow().isoformat()}
+                    )
+            except asyncio.TimeoutError:
+                current_patients = await run_in_threadpool(_get_patients_snapshot)
+                current_alerts = await run_in_threadpool(_get_alerts_snapshot)
+                current_patients_signature = _snapshot_signature(current_patients)
+                current_alerts_signature = _snapshot_signature(current_alerts)
+
+                if current_patients_signature != patients_signature:
+                    await websocket.send_json(
+                        {"type": "patients_snapshot", "patients": current_patients}
+                    )
+                    patients_snapshot = current_patients
+                    patients_signature = current_patients_signature
+
+                if current_alerts_signature != alerts_signature:
+                    await websocket.send_json(
+                        {"type": "alerts_snapshot", "alerts": current_alerts}
+                    )
+                    alerts_snapshot = current_alerts
+                    alerts_signature = current_alerts_signature
+
+    except WebSocketDisconnect:
+        return
 
 
 @router.websocket("/vitals/{patient_id}")

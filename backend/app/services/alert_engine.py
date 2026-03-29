@@ -90,7 +90,7 @@ def get_patient_alert_history(patient_id: UUID, db: Session):
     return (
         db.query(PatientAlert)
         .filter_by(patient_id=patient_id)
-        .filter(PatientAlert.status == "closed")
+        .filter(PatientAlert.status.in_(["closed", "acknowledged"]))
         .order_by(PatientAlert.closed_at.desc())
         .limit(20)
         .all()

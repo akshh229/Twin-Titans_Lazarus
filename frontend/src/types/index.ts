@@ -15,6 +15,12 @@ export interface Patient {
   identity_sample_count?: number
 }
 
+export type RealtimeConnectionState =
+  | 'connecting'
+  | 'reconnecting'
+  | 'live'
+  | 'offline'
+
 export interface VitalsDataPoint {
   timestamp: string
   bpm: number
@@ -81,4 +87,26 @@ export interface AlertOpenedMessage {
 export interface AlertClosedMessage {
   type: 'alert_closed'
   patient_id: string
+}
+
+export interface PatientsSnapshotMessage {
+  type: 'patients_snapshot'
+  patients: Patient[]
+}
+
+export interface AlertsSnapshotMessage {
+  type: 'alerts_snapshot'
+  alerts: Alert[]
+}
+
+export interface TelemetrySimulationResponse {
+  patient_id: string
+  patient_raw_id: string
+  requested_bpm: number
+  applied_bpm: number
+  oxygen: number
+  parity_flag: string
+  adjusted_for_identity: boolean
+  timestamp: string
+  alert_status: string | null
 }
