@@ -32,14 +32,13 @@ def process_unprocessed_telemetry(db: Session = None):
 
             existing = (
                 db.query(CleanTelemetry)
-                .filter_by(
-                    patient_raw_id=record.patient_raw_id, timestamp=record.timestamp
-                )
+                .filter_by(staging_log_id=record.id)
                 .first()
             )
 
             if not existing:
                 clean = CleanTelemetry(
+                    staging_log_id=record.id,
                     patient_raw_id=record.patient_raw_id,
                     timestamp=record.timestamp,
                     hex_payload=record.hex_payload,
@@ -49,12 +48,11 @@ def process_unprocessed_telemetry(db: Session = None):
                     quality_flag=decoded["quality_flag"],
                 )
                 db.add(clean)
+                db.flush()
 
                 if decoded["quality_flag"] == "good" and decoded["bpm"]:
                     try:
-                        patient_id = reconcile_patient_identity(
-                            record.patient_raw_id, db
-                        )
+                        patient_id = reconcile_patient_identity(record.patient_raw_id, clean.id, db)
                         process_vitals_for_alerts(
                             patient_id, decoded["bpm"], decoded["oxygen"] or 0, db
                         )

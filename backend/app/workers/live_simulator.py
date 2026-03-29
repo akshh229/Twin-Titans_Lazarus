@@ -49,10 +49,12 @@ def simulate_vitals_batch(db: Session, patients: list[str]):
             source_device="SIMULATOR",
         )
         db.add(staging)
+        db.flush()
 
         # Decode and write to cleaned
         decoded = decode_telemetry(hex_payload)
         clean = CleanTelemetry(
+            staging_log_id=staging.id,
             patient_raw_id=raw_id,
             timestamp=now,
             hex_payload=hex_payload,
@@ -66,7 +68,7 @@ def simulate_vitals_batch(db: Session, patients: list[str]):
         # Process alerts
         if decoded["quality_flag"] == "good":
             try:
-                patient_id = reconcile_patient_identity(raw_id, db)
+                patient_id = reconcile_patient_identity(raw_id, clean.id, db)
                 process_vitals_for_alerts(
                     patient_id, decoded["bpm"], decoded["oxygen"], db
                 )

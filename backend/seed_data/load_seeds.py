@@ -15,7 +15,7 @@ from app.models.staging import (
 from app.models.cleaned import CleanTelemetry, CleanPrescriptions, CleanDemographics
 from app.services.telemetry_decoder import decode_telemetry
 from app.services.cipher import decrypt_medication
-from app.services.identity_reconciler import reconcile_patient_identity
+from app.services.identity_reconciler import ensure_patient_aliases
 from app.services.name_decoder import decode_patient_name
 
 BASE_DIR = Path(__file__).parent
@@ -77,7 +77,7 @@ def process_telemetry():
 
         existing = (
             db.query(CleanTelemetry)
-            .filter_by(patient_raw_id=record.patient_raw_id, timestamp=record.timestamp)
+            .filter_by(staging_log_id=record.id)
             .first()
         )
         if existing:
@@ -85,6 +85,7 @@ def process_telemetry():
             continue
 
         clean = CleanTelemetry(
+            staging_log_id=record.id,
             patient_raw_id=record.patient_raw_id,
             timestamp=record.timestamp,
             hex_payload=record.hex_payload,
@@ -164,15 +165,16 @@ def process_demographics():
 
 
 def reconcile_identities():
-    """Create patient aliases using BPM parity"""
+    """Create patient aliases using telemetry slot parity recovery."""
     db = SessionLocal()
 
     print("Reconciling patient identities...")
-    demographics = db.query(CleanDemographics).all()
+    raw_ids = [row[0] for row in db.query(CleanTelemetry.patient_raw_id).distinct().all()]
 
-    for demo in demographics:
-        patient_id = reconcile_patient_identity(demo.patient_raw_id, db)
-        print(f"  {demo.patient_raw_id} -> {patient_id}")
+    for raw_id in raw_ids:
+        aliases = ensure_patient_aliases(raw_id, db)
+        for alias in aliases.values():
+            print(f"  {raw_id}/{alias.parity_flag} -> {alias.patient_id}")
 
     print("  Done")
     db.close()

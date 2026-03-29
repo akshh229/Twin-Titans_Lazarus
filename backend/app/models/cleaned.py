@@ -20,6 +20,7 @@ class CleanTelemetry(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     patient_raw_id = Column(String(50), nullable=False, index=True)
+    staging_log_id = Column(Integer, index=True)
     timestamp = Column(DateTime(timezone=True), nullable=False, index=True)
     hex_payload = Column(Text)
     bpm = Column(Integer)
@@ -29,9 +30,7 @@ class CleanTelemetry(Base):
     processed_at = Column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
-        UniqueConstraint(
-            "patient_raw_id", "timestamp", name="uq_clean_telemetry_patient_timestamp"
-        ),
+        UniqueConstraint("staging_log_id", name="uq_clean_telemetry_staging_log_id"),
         CheckConstraint("parity_flag IN ('even', 'odd')", name="ck_parity_flag"),
         CheckConstraint(
             "quality_flag IN ('good', 'bad', 'missing')", name="ck_quality_flag"

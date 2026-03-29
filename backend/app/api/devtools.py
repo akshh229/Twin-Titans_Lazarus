@@ -66,16 +66,17 @@ async def simulate_telemetry(
     timestamp = datetime.utcnow()
     hex_payload = encode_telemetry(applied_bpm, payload.oxygen)
 
-    db.add(
-        StgTelemetryLogs(
-            patient_raw_id=alias.patient_raw_id,
-            timestamp=timestamp,
-            hex_payload=hex_payload,
-            source_device=payload.source_device,
-        )
+    staging = StgTelemetryLogs(
+        patient_raw_id=alias.patient_raw_id,
+        timestamp=timestamp,
+        hex_payload=hex_payload,
+        source_device=payload.source_device,
     )
+    db.add(staging)
+    db.flush()
     db.add(
         CleanTelemetry(
+            staging_log_id=staging.id,
             patient_raw_id=alias.patient_raw_id,
             timestamp=timestamp,
             hex_payload=hex_payload,
