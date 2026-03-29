@@ -14,6 +14,7 @@ from app.database import get_db
 from app.models.alerts import PatientAlert
 from app.schemas.alert import AlertResponse, AlertHistoryResponse
 from app.services.alert_engine import get_patient_alert_history
+from app.services.recovery_projection import RECOVERY_CTES, hydrate_name_fields
 
 router = APIRouter()
 
@@ -21,7 +22,9 @@ router = APIRouter()
 @router.get("/alerts", response_model=List[AlertResponse])
 async def list_active_alerts(db: Session = Depends(get_db)):
     """Get all currently open critical alerts."""
-    query = text("""
+    query = text(
+        RECOVERY_CTES
+        + """
         SELECT
             pa.id,
             pa.patient_id,
@@ -31,18 +34,25 @@ async def list_active_alerts(db: Session = Depends(get_db)):
             pa.last_oxygen,
             pa.status,
             pa.consecutive_abnormal_count,
-            cd.decoded_name as patient_name,
-            cd.age,
-            cd.ward
+            rd.name_cipher AS patient_name_cipher,
+            rd.age,
+            rd.ward
         FROM patient_alerts pa
         LEFT JOIN patient_alias paa ON pa.patient_id = paa.patient_id
-        LEFT JOIN clean_demographics cd ON cd.patient_raw_id = paa.patient_raw_id
+        LEFT JOIN recovered_demographics rd
+          ON rd.patient_raw_id = paa.patient_raw_id
+         AND rd.parity_flag = paa.parity_flag
         WHERE pa.status = 'open'
         ORDER BY pa.opened_at DESC
-    """)
+    """
+    )
 
     result = db.execute(query)
-    alerts = [dict(row._mapping) for row in result]
+    alerts = hydrate_name_fields(
+        [dict(row._mapping) for row in result],
+        cipher_key="patient_name_cipher",
+        output_key="patient_name",
+    )
     return alerts
 
 

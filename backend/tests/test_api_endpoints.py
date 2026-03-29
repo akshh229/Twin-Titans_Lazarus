@@ -45,7 +45,7 @@ class TestPatientEndpoints:
             "patient_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
             "patient_raw_id": "P00001",
             "parity_flag": "even",
-            "name": "Test Patient",
+            "name_cipher": "JOHNSMITH",
             "age": 45,
             "ward": "ICU-1",
             "last_bpm": 72,
@@ -59,6 +59,7 @@ class TestPatientEndpoints:
 
         response = client.get("/api/patients")
         assert response.status_code == 200
+        assert response.json()[0]["name"] == "John Smith"
 
 
 class TestAlertEndpoints:

@@ -1,63 +1,88 @@
-"""Tests for identity reconciliation"""
+"""Tests for slot-based identity reconciliation."""
+
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock
-from app.services.identity_reconciler import reconcile_patient_identity
+
+from app.services.identity_reconciler import _assign_slot_parities, reconcile_patient_identity
 
 
-class TestIdentityReconciler:
-    def test_dominant_even_parity(self):
+class TestSlotAssignments:
+    def test_single_slot_uses_majority_parity(self):
+        assignments = _assign_slot_parities(
+            [
+                {
+                    "sample_slot": 1,
+                    "sample_count": 10,
+                    "even_count": 8,
+                    "odd_count": 2,
+                    "even_share": 0.8,
+                    "odd_share": 0.2,
+                }
+            ]
+        )
+
+        assert assignments == {
+            1: {
+                "parity_flag": "even",
+                "sample_count": 10,
+                "confidence_score": 0.8,
+            }
+        }
+
+    def test_multiple_slots_claim_even_heaviest_slot_and_rest_odd(self):
+        assignments = _assign_slot_parities(
+            [
+                {
+                    "sample_slot": 1,
+                    "sample_count": 12,
+                    "even_count": 10,
+                    "odd_count": 2,
+                    "even_share": 10 / 12,
+                    "odd_share": 2 / 12,
+                },
+                {
+                    "sample_slot": 2,
+                    "sample_count": 12,
+                    "even_count": 3,
+                    "odd_count": 9,
+                    "even_share": 3 / 12,
+                    "odd_share": 9 / 12,
+                },
+            ]
+        )
+
+        assert assignments[1]["parity_flag"] == "even"
+        assert assignments[1]["confidence_score"] == round(10 / 12, 2)
+        assert assignments[2]["parity_flag"] == "odd"
+        assert assignments[2]["confidence_score"] == round(9 / 12, 2)
+
+
+class TestReconcilePatientIdentity:
+    def test_reconcile_returns_alias_for_row_slot(self):
         mock_db = MagicMock()
+        mock_execute_result = MagicMock()
+        mock_execute_result.first.return_value = (2,)
+        mock_db.execute.return_value = mock_execute_result
 
-        # Build mock samples: 8 even, 2 odd
-        mock_samples = []
-        for _ in range(8):
-            s = MagicMock()
-            s.parity_flag = "even"
-            mock_samples.append(s)
-        for _ in range(2):
-            s = MagicMock()
-            s.parity_flag = "odd"
-            mock_samples.append(s)
+        with patch(
+            "app.services.identity_reconciler.ensure_patient_aliases",
+            return_value={2: SimpleNamespace(patient_id="odd-uuid")},
+        ):
+            result = reconcile_patient_identity("P00001", 42, mock_db)
 
-        # First query: CleanTelemetry -> returns samples
-        telemetry_query = MagicMock()
-        telemetry_query.filter.return_value = telemetry_query
-        telemetry_query.order_by.return_value = telemetry_query
-        telemetry_query.limit.return_value = telemetry_query
-        telemetry_query.all.return_value = mock_samples
+        assert result == "odd-uuid"
 
-        # Second query: PatientAlias -> returns existing alias
-        alias_query = MagicMock()
-        mock_alias = MagicMock()
-        mock_alias.patient_id = "test-uuid"
-        alias_query.filter_by.return_value = alias_query
-        alias_query.first.return_value = mock_alias
-
-        # db.query returns different mocks per model call
-        mock_db.query.side_effect = [telemetry_query, alias_query]
-
-        result = reconcile_patient_identity("P00001", mock_db)
-        assert result == "test-uuid"
-
-    def test_no_samples_defaults_even(self):
+    def test_reconcile_raises_when_slot_lookup_fails(self):
         mock_db = MagicMock()
+        mock_execute_result = MagicMock()
+        mock_execute_result.first.return_value = None
+        mock_db.execute.return_value = mock_execute_result
 
-        # First query: CleanTelemetry -> no samples
-        telemetry_query = MagicMock()
-        telemetry_query.filter.return_value = telemetry_query
-        telemetry_query.order_by.return_value = telemetry_query
-        telemetry_query.limit.return_value = telemetry_query
-        telemetry_query.all.return_value = []
-
-        # Second query: PatientAlias -> existing alias
-        alias_query = MagicMock()
-        mock_alias = MagicMock()
-        mock_alias.patient_id = "default-uuid"
-        alias_query.filter_by.return_value = alias_query
-        alias_query.first.return_value = mock_alias
-
-        mock_db.query.side_effect = [telemetry_query, alias_query]
-
-        result = reconcile_patient_identity("P00001", mock_db)
-        assert result == "default-uuid"
+        with patch(
+            "app.services.identity_reconciler.ensure_patient_aliases",
+            return_value={1: SimpleNamespace(patient_id="even-uuid")},
+        ):
+            with pytest.raises(ValueError, match="Telemetry row 99 not found"):
+                reconcile_patient_identity("P00001", 99, mock_db)

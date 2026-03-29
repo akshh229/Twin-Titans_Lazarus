@@ -24,6 +24,7 @@ class PatientAlert(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('open', 'closed', 'acknowledged')", name="ck_alert_status"
+            "status IN ('pending', 'open', 'closed', 'acknowledged')",
+            name="ck_alert_status",
         ),
     )

@@ -67,7 +67,7 @@ export default function PatientAlertPanel({ patientId }: PatientAlertPanelProps)
               </div>
               <div className="rounded-xl bg-lazarus-surface-low/80 p-4 ring-1 ring-lazarus-border/25">
                 <p className="vitals-label">Last BPM</p>
-                <p className="mt-2 text-2xl font-mono font-bold text-[#ffb4ab]">
+                <p className="mt-2 text-2xl font-mono font-bold text-lazarus-critical">
                   {activeAlert.last_bpm ?? '--'}
                 </p>
               </div>
@@ -79,7 +79,7 @@ export default function PatientAlertPanel({ patientId }: PatientAlertPanelProps)
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#0a0e14]/70 p-4 ring-1 ring-[#424754]/25">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-lazarus-surface/94 p-4 ring-1 ring-lazarus-border/70">
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 text-lazarus-warning" size={18} />
                 <div>
@@ -97,7 +97,7 @@ export default function PatientAlertPanel({ patientId }: PatientAlertPanelProps)
                   acknowledgeAlert.mutate({ alertId: activeAlert.id, patientId })
                 }
                 disabled={acknowledgeAlert.isPending}
-                className="inline-flex items-center gap-2 rounded-lg bg-lazarus-accent px-4 py-2 text-sm font-semibold text-[#001a42] transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-lazarus-accent px-4 py-2 text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <BellOff size={15} />
                 {acknowledgeAlert.isPending ? 'Acknowledging...' : 'Acknowledge Alert'}
@@ -146,13 +146,13 @@ export default function PatientAlertPanel({ patientId }: PatientAlertPanelProps)
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0a0e14]/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-muted ring-1 ring-[#424754]/25">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-lazarus-surface/94 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-muted ring-1 ring-lazarus-border/70">
                       <Clock3 size={12} />
                       {entry.duration_minutes != null
                         ? `${entry.duration_minutes} min`
                         : 'Pending'}
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-[#0a0e14]/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-text ring-1 ring-[#424754]/25">
+                    <span className="inline-flex items-center rounded-full bg-lazarus-surface/94 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-lazarus-text ring-1 ring-lazarus-border/70">
                       {formatStatus(entry.status)}
                     </span>
                   </div>

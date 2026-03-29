@@ -19,11 +19,13 @@ export default function PatientCard({ patient, isSelected, index = 0 }: PatientC
     <Link to={`/patient/${patient.patient_id}`} className="block">
       <div
         className={`card patient-card group card-entrance card-interactive cursor-pointer ${
-          patient.has_active_alert ? 'card-critical patient-card-critical' : ''
+          patient.has_active_alert
+            ? 'card-critical patient-card-critical animate-pulse-critical-subtle'
+            : ''
         } ${
           isSelected
             ? 'ring-lazarus-accent/50 bg-lazarus-surface-high/60'
-            : 'hover:bg-[#182535]'
+            : 'hover:bg-lazarus-surface-high'
         }`}
         style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
       >
@@ -62,13 +64,13 @@ export default function PatientCard({ patient, isSelected, index = 0 }: PatientC
         <div className="grid grid-cols-2 gap-6">
           <div className="flex flex-col gap-2 transition-transform duration-300 group-hover:-translate-y-0.5">
             <p className="vitals-label">Heart rate</p>
-            <p className={`vitals-value ${bpmStatus === 'critical' ? 'text-[#ffd1cb]' : 'text-lazarus-text'}`}>
+            <p className={`vitals-value ${bpmStatus === 'critical' ? 'text-lazarus-critical' : 'text-lazarus-text'}`}>
               {patient.last_bpm ?? '--'}
             </p>
           </div>
           <div className="flex flex-col gap-2 transition-transform duration-300 delay-75 group-hover:-translate-y-0.5">
             <p className="vitals-label">Oxygen saturation</p>
-            <p className={`vitals-value ${patient.last_oxygen && patient.last_oxygen < 90 ? 'text-[#ffd1cb]' : 'text-lazarus-text'}`}>
+            <p className={`vitals-value ${patient.last_oxygen && patient.last_oxygen < 90 ? 'text-lazarus-critical' : 'text-lazarus-text'}`}>
               {patient.last_oxygen != null ? `${patient.last_oxygen}%` : '--'}
             </p>
           </div>

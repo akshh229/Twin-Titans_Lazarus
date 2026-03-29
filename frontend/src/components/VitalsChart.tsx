@@ -1,5 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Legend } from 'recharts'
 import type { VitalsDataPoint } from '../types'
+import { useTheme } from '../theme/ThemeProvider'
 
 interface VitalsChartProps {
   data: VitalsDataPoint[]
@@ -9,11 +10,40 @@ interface VitalsChartProps {
 }
 
 export default function VitalsChart({ data, title, showBpm = true, showOxygen = true }: VitalsChartProps) {
+  const { theme } = useTheme()
   const chartData = data.map((d) => ({
     ...d,
     time: new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   }))
   const latestPoint = chartData[chartData.length - 1]
+  const chartPalette =
+    theme === 'navy'
+      ? {
+          grid: '#2b3a4f',
+          axis: '#94a8bf',
+          tooltipBg: 'rgba(17, 28, 45, 0.96)',
+          tooltipBorder: '1px solid rgba(43, 58, 79, 0.95)',
+          tooltipText: '#eaf0f7',
+          tooltipShadow: '0 18px 40px rgba(3, 10, 18, 0.42)',
+          oxygenLine: '#9db8d6',
+          oxygenDot: '#dbe8f7',
+          oxygenBand: '#7fa7c9',
+          bpmLine: '#f26d6d',
+          bpmDot: '#ffd6d6',
+        }
+      : {
+          grid: '#d7dee6',
+          axis: '#60758a',
+          tooltipBg: 'rgba(255, 255, 255, 0.97)',
+          tooltipBorder: '1px solid rgba(215, 222, 230, 0.95)',
+          tooltipText: '#18212b',
+          tooltipShadow: '0 18px 40px rgba(43, 58, 79, 0.12)',
+          oxygenLine: '#4f6d8a',
+          oxygenDot: '#b8c8d8',
+          oxygenBand: '#6b84a0',
+          bpmLine: '#d85c5c',
+          bpmDot: '#ffd4d4',
+        }
 
   return (
     <div className="card chart-shell">
@@ -22,21 +52,21 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
           <p className="section-label">Recovered telemetry</p>
           {title && <h3 className="mt-2 font-display text-[2rem] leading-none tracking-[-0.03em] text-lazarus-text">{title}</h3>}
           <p className="mt-3 text-sm text-lazarus-muted">
-            Streaming vitals with safety bands and live sample emphasis.
+            Streaming decoded BPM with reconstructed oxygen continuity across dropped frames.
           </p>
         </div>
         {latestPoint && (
-          <div className="signal-pill rounded-full bg-[#0d1520]/85 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-lazarus-muted">
+          <div className="signal-pill rounded-full bg-lazarus-surface/94 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-lazarus-muted">
             Latest sample {latestPoint.time}
           </div>
         )}
       </div>
       <ResponsiveContainer width="100%" height={250}>
         <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#314255" strokeOpacity={0.38} vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={chartPalette.grid} strokeOpacity={0.9} vertical={false} />
           <XAxis
             dataKey="time"
-            stroke="#96a6bb"
+            stroke={chartPalette.axis}
             tick={{ fontSize: 11 }}
             interval="preserveStartEnd"
           />
@@ -44,9 +74,9 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
             <YAxis
               yAxisId="bpm"
               domain={[40, 160]}
-              stroke="#96a6bb"
+              stroke={chartPalette.axis}
               tick={{ fontSize: 11 }}
-              label={{ value: 'BPM', angle: -90, position: 'insideLeft', fill: '#96a6bb', fontSize: 11 }}
+              label={{ value: 'BPM', angle: -90, position: 'insideLeft', fill: chartPalette.axis, fontSize: 11 }}
             />
           )}
           {showOxygen && (
@@ -54,19 +84,19 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
               yAxisId="oxygen"
               orientation="right"
               domain={[85, 100]}
-              stroke="#96a6bb"
+              stroke={chartPalette.axis}
               tick={{ fontSize: 11 }}
-              label={{ value: 'SpO2%', angle: 90, position: 'insideRight', fill: '#96a6bb', fontSize: 11 }}
+              label={{ value: 'SpO2%', angle: 90, position: 'insideRight', fill: chartPalette.axis, fontSize: 11 }}
             />
           )}
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(12, 20, 30, 0.94)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: chartPalette.tooltipBg,
+              backdropFilter: 'blur(10px)',
+              border: chartPalette.tooltipBorder,
               borderRadius: '14px',
-              color: '#f4efe6',
-              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.42)'
+              color: chartPalette.tooltipText,
+              boxShadow: chartPalette.tooltipShadow
             }}
           />
           <Legend />
@@ -82,7 +112,7 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
 
           {/* SpO2 safe zone */}
           {showOxygen && (
-            <ReferenceArea yAxisId="oxygen" y1={95} y2={100} fill="#3b82f6" fillOpacity={0.1} />
+            <ReferenceArea yAxisId="oxygen" y1={95} y2={100} fill={chartPalette.oxygenBand} fillOpacity={0.1} />
           )}
 
           {showBpm && (
@@ -90,13 +120,14 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
               yAxisId="bpm"
               type="monotone"
               dataKey="bpm"
-              stroke="#f06c66"
+              stroke={chartPalette.bpmLine}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 5, strokeWidth: 0, fill: '#ffd1cb' }}
+              activeDot={{ r: 5, strokeWidth: 0, fill: chartPalette.bpmDot }}
               isAnimationActive
               animationDuration={450}
               animationEasing="ease-out"
+              connectNulls
               name="BPM"
             />
           )}
@@ -105,14 +136,14 @@ export default function VitalsChart({ data, title, showBpm = true, showOxygen = 
               yAxisId="oxygen"
               type="monotone"
               dataKey="oxygen"
-              stroke="#8db4ff"
+              stroke={chartPalette.oxygenLine}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 5, strokeWidth: 0, fill: '#d6e4ff' }}
+              activeDot={{ r: 5, strokeWidth: 0, fill: chartPalette.oxygenDot }}
               isAnimationActive
               animationDuration={450}
               animationEasing="ease-out"
-              name="SpO2"
+              name="SpO2 (reconstructed)"
             />
           )}
         </LineChart>

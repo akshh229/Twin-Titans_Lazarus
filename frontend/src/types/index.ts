@@ -23,8 +23,8 @@ export type RealtimeConnectionState =
 
 export interface VitalsDataPoint {
   timestamp: string
-  bpm: number
-  oxygen: number
+  bpm: number | null
+  oxygen: number | null
   quality_flag: string
 }
 

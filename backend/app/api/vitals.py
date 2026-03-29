@@ -5,15 +5,16 @@ Provides time-series vitals data for charts
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import text
 from typing import List
 from uuid import UUID
 from datetime import datetime, timedelta
 
 from app.database import get_db
-from app.models.cleaned import CleanTelemetry
 from app.models.identity import PatientAlias
 from app.schemas.telemetry import VitalsTimeSeriesResponse
+from app.services.recovery_projection import RECOVERY_CTES
+from app.services.vitals_interpolator import interpolate_oxygen_series
 
 router = APIRouter()
 
@@ -33,30 +34,37 @@ async def get_patient_vitals(
     end_time = datetime.utcnow()
     start_time = end_time - timedelta(hours=hours)
 
-    vitals = (
-        db.query(CleanTelemetry)
-        .filter(
-            and_(
-                CleanTelemetry.patient_raw_id == alias.patient_raw_id,
-                CleanTelemetry.parity_flag == alias.parity_flag,
-                CleanTelemetry.timestamp >= start_time,
-                CleanTelemetry.timestamp <= end_time,
-                CleanTelemetry.quality_flag == "good",
-            )
-        )
-        .order_by(CleanTelemetry.timestamp.asc())
-        .all()
-    )
+    vitals = db.execute(
+        text(
+            RECOVERY_CTES
+            + """
+            SELECT timestamp, bpm, oxygen, quality_flag
+            FROM resolved_telemetry
+            WHERE patient_raw_id = :patient_raw_id
+              AND resolved_parity = :parity_flag
+              AND timestamp >= :start_time
+              AND timestamp <= :end_time
+            ORDER BY timestamp ASC, id ASC
+            """
+        ),
+        {
+            "patient_raw_id": alias.patient_raw_id,
+            "parity_flag": alias.parity_flag,
+            "start_time": start_time,
+            "end_time": end_time,
+        },
+    ).mappings()
 
     data_points = [
         {
-            "timestamp": v.timestamp,
-            "bpm": v.bpm,
-            "oxygen": v.oxygen,
-            "quality_flag": v.quality_flag,
+            "timestamp": v["timestamp"],
+            "bpm": v["bpm"],
+            "oxygen": v["oxygen"],
+            "quality_flag": v["quality_flag"],
         }
         for v in vitals
     ]
+    data_points = interpolate_oxygen_series(data_points)
 
     return {
         "patient_id": patient_id,

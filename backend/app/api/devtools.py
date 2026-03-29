@@ -8,30 +8,16 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.alerts import PatientAlert
-from app.models.cleaned import CleanTelemetry
 from app.models.identity import PatientAlias
-from app.models.staging import StgTelemetryLogs
 from app.schemas.devtools import (
     TelemetrySimulationRequest,
     TelemetrySimulationResponse,
 )
 from app.services.alert_engine import process_vitals_for_alerts
-from app.services.telemetry_decoder import encode_telemetry
+from app.services.identity_reconciler import ensure_patient_aliases
+from app.services.telemetry_writer import align_bpm_to_parity, insert_clean_sample
 
 router = APIRouter()
-
-
-def _align_bpm_to_alias_parity(bpm: int, parity_flag: str) -> int:
-    wants_even = parity_flag == "even"
-    is_even = bpm % 2 == 0
-
-    if wants_even == is_even:
-        return bpm
-
-    if bpm < settings.BPM_MAX:
-        return bpm + 1
-
-    return bpm - 1
 
 
 @router.post(
@@ -62,31 +48,39 @@ async def simulate_telemetry(
             detail="Patient alias not found.",
         )
 
-    applied_bpm = _align_bpm_to_alias_parity(payload.bpm, alias.parity_flag)
+    applied_bpm = align_bpm_to_parity(payload.bpm, alias.parity_flag)
     timestamp = datetime.utcnow()
-    hex_payload = encode_telemetry(applied_bpm, payload.oxygen)
+    aliases_by_slot = ensure_patient_aliases(alias.patient_raw_id, db)
+    target_slot = next(
+        (
+            slot
+            for slot, mapped_alias in aliases_by_slot.items()
+            if mapped_alias.patient_id == alias.patient_id
+        ),
+        1,
+    )
 
-    staging = StgTelemetryLogs(
-        patient_raw_id=alias.patient_raw_id,
-        timestamp=timestamp,
-        hex_payload=hex_payload,
-        source_device=payload.source_device,
-    )
-    db.add(staging)
-    db.flush()
-    db.add(
-        CleanTelemetry(
-            staging_log_id=staging.id,
+    for slot in sorted(slot for slot in aliases_by_slot if slot < target_slot):
+        companion_alias = aliases_by_slot[slot]
+        insert_clean_sample(
+            db,
             patient_raw_id=alias.patient_raw_id,
+            parity_flag=companion_alias.parity_flag,
+            bpm=76,
+            oxygen=98,
+            source_device=f"{payload.source_device}-COMPANION",
             timestamp=timestamp,
-            hex_payload=hex_payload,
-            bpm=applied_bpm,
-            oxygen=payload.oxygen,
-            parity_flag=alias.parity_flag,
-            quality_flag="good",
         )
+
+    insert_clean_sample(
+        db,
+        patient_raw_id=alias.patient_raw_id,
+        parity_flag=alias.parity_flag,
+        bpm=payload.bpm,
+        oxygen=payload.oxygen,
+        source_device=payload.source_device,
+        timestamp=timestamp,
     )
-    db.flush()
 
     process_vitals_for_alerts(payload.patient_id, applied_bpm, payload.oxygen, db)
 

@@ -26,7 +26,7 @@ export default function PharmacyTable({ prescriptions }: PharmacyTableProps) {
         {prescriptions.map((rx) => (
           <div
             key={rx.id}
-            className="rounded-[1.35rem] border border-white/7 bg-[#0e1620]/86 p-4 ring-1 ring-white/[0.03]"
+            className="rounded-[1.35rem] border border-lazarus-border bg-lazarus-surface/94 p-4 ring-1 ring-lazarus-border/35"
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -82,7 +82,7 @@ export default function PharmacyTable({ prescriptions }: PharmacyTableProps) {
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/7 text-left text-lazarus-muted">
+            <tr className="border-b border-lazarus-border text-left text-lazarus-muted">
               <th className="pb-3 pr-4 font-semibold tracking-wider uppercase text-xs">Time</th>
               <th className="pb-3 pr-4 font-semibold tracking-wider uppercase text-xs">Encrypted</th>
               <th className="pb-3 pr-4 font-semibold tracking-wider uppercase text-xs">Decrypted</th>
@@ -92,7 +92,7 @@ export default function PharmacyTable({ prescriptions }: PharmacyTableProps) {
           </thead>
           <tbody>
             {prescriptions.map((rx) => (
-              <tr key={rx.id} className="border-b border-white/6 transition-colors hover:bg-white/[0.03]">
+              <tr key={rx.id} className="border-b border-lazarus-border/70 transition-colors hover:bg-lazarus-surface-high/80">
                 <td className="py-3 pr-4 font-mono text-xs text-lazarus-muted">
                   {new Date(rx.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </td>

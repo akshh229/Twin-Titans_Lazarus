@@ -17,6 +17,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import SessionLocal
+from app.services.recovery_projection import RECOVERY_CTES, hydrate_name_fields
 
 router = APIRouter()
 
@@ -43,10 +44,11 @@ def _get_patient_snapshot(patient_id: str) -> dict[str, Any] | None:
         row = (
             db.execute(
                 text(
-                    """
+                    RECOVERY_CTES
+                    + """
                     SELECT
                         pa.patient_id,
-                        cd.decoded_name AS patient_name,
+                        rd.name_cipher AS patient_name_cipher,
                         latest_vitals.bpm AS last_bpm,
                         latest_vitals.oxygen AS last_oxygen,
                         latest_vitals.timestamp AS last_vitals_timestamp,
@@ -57,15 +59,15 @@ def _get_patient_snapshot(patient_id: str) -> dict[str, Any] | None:
                               AND status = 'open'
                         ) AS has_active_alert
                     FROM patient_alias pa
-                    LEFT JOIN clean_demographics cd
-                        ON cd.patient_raw_id = pa.patient_raw_id
+                    LEFT JOIN recovered_demographics rd
+                        ON rd.patient_raw_id = pa.patient_raw_id
+                       AND rd.parity_flag = pa.parity_flag
                     LEFT JOIN LATERAL (
                         SELECT bpm, oxygen, timestamp
-                        FROM clean_telemetry ct
-                        WHERE ct.patient_raw_id = pa.patient_raw_id
-                          AND ct.parity_flag = pa.parity_flag
-                          AND ct.quality_flag = 'good'
-                        ORDER BY timestamp DESC
+                        FROM resolved_telemetry rt
+                        WHERE rt.patient_raw_id = pa.patient_raw_id
+                          AND rt.resolved_parity = pa.parity_flag
+                        ORDER BY timestamp DESC, id DESC
                         LIMIT 1
                     ) latest_vitals ON true
                     WHERE pa.patient_id = :patient_id
@@ -80,7 +82,11 @@ def _get_patient_snapshot(patient_id: str) -> dict[str, Any] | None:
         if row is None:
             return None
 
-        snapshot = dict(row)
+        snapshot = hydrate_name_fields(
+            [dict(row)],
+            cipher_key="patient_name_cipher",
+            output_key="patient_name",
+        )[0]
         timestamp = snapshot.get("last_vitals_timestamp")
         snapshot["last_vitals_timestamp"] = (
             timestamp.isoformat() if timestamp is not None else None
@@ -96,14 +102,15 @@ def _get_patients_snapshot() -> list[dict[str, Any]]:
     try:
         rows = db.execute(
             text(
-                """
+                RECOVERY_CTES
+                + """
                 SELECT
                     pa.patient_id,
                     pa.patient_raw_id,
                     pa.parity_flag,
-                    cd.decoded_name as name,
-                    cd.age,
-                    cd.ward,
+                    rd.name_cipher,
+                    rd.age,
+                    rd.ward,
                     latest_vitals.bpm AS last_bpm,
                     latest_vitals.oxygen AS last_oxygen,
                     latest_vitals.timestamp AS last_vitals_timestamp,
@@ -115,28 +122,39 @@ def _get_patients_snapshot() -> list[dict[str, Any]]:
                         AND status = 'open'
                     ) AS has_active_alert
                 FROM patient_alias pa
-                LEFT JOIN clean_demographics cd ON cd.patient_raw_id = pa.patient_raw_id
+                LEFT JOIN recovered_demographics rd
+                  ON rd.patient_raw_id = pa.patient_raw_id
+                 AND rd.parity_flag = pa.parity_flag
                 LEFT JOIN LATERAL (
                     SELECT bpm, oxygen, timestamp, quality_flag
-                    FROM clean_telemetry ct
-                    WHERE ct.patient_raw_id = pa.patient_raw_id
-                        AND ct.parity_flag = pa.parity_flag
-                        AND ct.quality_flag = 'good'
-                    ORDER BY timestamp DESC
+                    FROM resolved_telemetry rt
+                    WHERE rt.patient_raw_id = pa.patient_raw_id
+                      AND rt.resolved_parity = pa.parity_flag
+                    ORDER BY timestamp DESC, id DESC
                     LIMIT 1
                 ) latest_vitals ON true
                 LEFT JOIN (
-                    SELECT patient_raw_id, COUNT(*) AS cnt
-                    FROM clean_prescriptions
-                    GROUP BY patient_raw_id
-                ) presc_count ON presc_count.patient_raw_id = pa.patient_raw_id
-                ORDER BY has_active_alert DESC, cd.decoded_name ASC
+                    SELECT cp.patient_raw_id, rd_inner.parity_flag, COUNT(*) AS cnt
+                    FROM clean_prescriptions cp
+                    JOIN recovered_demographics rd_inner
+                      ON rd_inner.patient_raw_id = cp.patient_raw_id
+                     AND rd_inner.age = cp.age
+                    GROUP BY cp.patient_raw_id, rd_inner.parity_flag
+                ) presc_count
+                  ON presc_count.patient_raw_id = pa.patient_raw_id
+                 AND presc_count.parity_flag = pa.parity_flag
+                ORDER BY has_active_alert DESC, rd.age ASC NULLS LAST, pa.patient_raw_id ASC, pa.parity_flag ASC
                 LIMIT 100
                 """
             )
         ).mappings()
 
-        return [_serialize_mapping(dict(row)) for row in rows]
+        hydrated = hydrate_name_fields(
+            [dict(row) for row in rows],
+            cipher_key="name_cipher",
+            output_key="name",
+        )
+        return [_serialize_mapping(row) for row in hydrated]
     finally:
         db.close()
 
@@ -146,7 +164,8 @@ def _get_alerts_snapshot() -> list[dict[str, Any]]:
     try:
         rows = db.execute(
             text(
-                """
+                RECOVERY_CTES
+                + """
                 SELECT
                     pa.id,
                     pa.patient_id,
@@ -156,19 +175,26 @@ def _get_alerts_snapshot() -> list[dict[str, Any]]:
                     pa.last_oxygen,
                     pa.status,
                     pa.consecutive_abnormal_count,
-                    cd.decoded_name as patient_name,
-                    cd.age,
-                    cd.ward
+                    rd.name_cipher AS patient_name_cipher,
+                    rd.age,
+                    rd.ward
                 FROM patient_alerts pa
                 LEFT JOIN patient_alias paa ON pa.patient_id = paa.patient_id
-                LEFT JOIN clean_demographics cd ON cd.patient_raw_id = paa.patient_raw_id
+                LEFT JOIN recovered_demographics rd
+                  ON rd.patient_raw_id = paa.patient_raw_id
+                 AND rd.parity_flag = paa.parity_flag
                 WHERE pa.status = 'open'
                 ORDER BY pa.opened_at DESC
                 """
             )
         ).mappings()
 
-        return [_serialize_mapping(dict(row)) for row in rows]
+        hydrated = hydrate_name_fields(
+            [dict(row) for row in rows],
+            cipher_key="patient_name_cipher",
+            output_key="patient_name",
+        )
+        return [_serialize_mapping(row) for row in hydrated]
     finally:
         db.close()
 

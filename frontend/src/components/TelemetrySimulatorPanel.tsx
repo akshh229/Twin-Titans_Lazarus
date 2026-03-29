@@ -95,7 +95,7 @@ export default function TelemetrySimulatorPanel({
               max={220}
               value={bpm}
               onChange={(event) => setBpm(Number(event.target.value))}
-              className="mt-3 w-full rounded-lg border border-lazarus-border/30 bg-[#0a0e14]/80 px-3 py-2 font-mono text-lg text-lazarus-text outline-none transition focus:border-lazarus-accent focus:ring-2 focus:ring-lazarus-accent/20"
+              className="mt-3 w-full rounded-lg border border-lazarus-border bg-lazarus-surface px-3 py-2 font-mono text-lg text-lazarus-text outline-none transition focus:border-lazarus-accent focus:ring-2 focus:ring-lazarus-accent/20"
             />
           </label>
 
@@ -107,7 +107,7 @@ export default function TelemetrySimulatorPanel({
               max={100}
               value={oxygen}
               onChange={(event) => setOxygen(Number(event.target.value))}
-              className="mt-3 w-full rounded-lg border border-lazarus-border/30 bg-[#0a0e14]/80 px-3 py-2 font-mono text-lg text-lazarus-text outline-none transition focus:border-lazarus-accent focus:ring-2 focus:ring-lazarus-accent/20"
+              className="mt-3 w-full rounded-lg border border-lazarus-border bg-lazarus-surface px-3 py-2 font-mono text-lg text-lazarus-text outline-none transition focus:border-lazarus-accent focus:ring-2 focus:ring-lazarus-accent/20"
             />
           </label>
         </div>
@@ -119,7 +119,7 @@ export default function TelemetrySimulatorPanel({
               setBpm(abnormalPreset.bpm)
               setOxygen(abnormalPreset.oxygen)
             }}
-            className="rounded-lg border border-lazarus-critical/30 bg-[#93000a]/20 px-3 py-2 text-sm font-semibold text-[#ffb4ab] transition hover:-translate-y-0.5"
+            className="rounded-lg border border-lazarus-critical/25 bg-[rgba(216,92,92,0.1)] px-3 py-2 text-sm font-semibold text-lazarus-critical transition hover:-translate-y-0.5"
           >
             Load alert preset
           </button>
@@ -129,7 +129,7 @@ export default function TelemetrySimulatorPanel({
               setBpm(normalPreset.bpm)
               setOxygen(normalPreset.oxygen)
             }}
-            className="rounded-lg border border-lazarus-normal/30 bg-[#00311f]/40 px-3 py-2 text-sm font-semibold text-lazarus-normal transition hover:-translate-y-0.5"
+            className="rounded-lg border border-lazarus-normal/25 bg-[rgba(47,155,115,0.1)] px-3 py-2 text-sm font-semibold text-lazarus-normal transition hover:-translate-y-0.5"
           >
             Load normal preset
           </button>
@@ -137,14 +137,14 @@ export default function TelemetrySimulatorPanel({
             type="button"
             onClick={() => simulateTelemetry.mutate()}
             disabled={simulateTelemetry.isPending}
-            className="rounded-lg bg-lazarus-accent px-4 py-2 text-sm font-semibold text-[#001a42] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-lazarus-accent px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {simulateTelemetry.isPending ? 'Injecting sample...' : 'Inject sample'}
           </button>
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl bg-[#0a0e14]/70 p-4 ring-1 ring-[#424754]/25">
+      <div className="mt-4 rounded-xl bg-lazarus-surface/94 p-4 ring-1 ring-lazarus-border/70">
         <p className="text-sm font-semibold text-lazarus-text">QA note</p>
         <p className="mt-1 text-sm text-lazarus-muted">{feedHint}</p>
       </div>
@@ -154,8 +154,8 @@ export default function TelemetrySimulatorPanel({
           aria-live="polite"
           className={`mt-4 rounded-xl p-4 text-sm ring-1 ${
             simulateTelemetry.isError
-              ? 'bg-[#93000a]/15 text-[#ffb4ab] ring-lazarus-critical/20'
-              : 'bg-[#00311f]/35 text-lazarus-normal ring-lazarus-normal/20'
+              ? 'bg-[rgba(216,92,92,0.1)] text-lazarus-critical ring-lazarus-critical/20'
+              : 'bg-[rgba(47,155,115,0.1)] text-lazarus-normal ring-lazarus-normal/20'
           }`}
         >
           {simulateTelemetry.isError
